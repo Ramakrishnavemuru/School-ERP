@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports &amp; Analytics - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Reports &amp; Analytics</h2>
+            <div class="page-subtitle">School-wide academic performance, attendance records, and financial analytics</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-primary" onclick="reportsManager.init()">🔄 Refresh Reports</button>
+          </div>
+        </div>
+
+        <!-- Section 1: Financial Analytics -->
+        <h5 class="fw-bold mb-3">Financial Performance</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Expected Fees</span>
+                <span class="stat-value text-dark" id="rep-fee-expected">$0.00</span>
+                <span class="stat-subtext">Total receivables</span>
+              </div>
+              <div class="stat-icon info">💳</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Collected Fees</span>
+                <span class="stat-value text-success" id="rep-fee-collected">$0.00</span>
+                <span class="stat-subtext">Successfully deposited</span>
+              </div>
+              <div class="stat-icon success">✅</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Outstanding Balance</span>
+                <span class="stat-value text-danger" id="rep-fee-outstanding">$0.00</span>
+                <span class="stat-subtext">Pending dues</span>
+              </div>
+              <div class="stat-icon warning">⚠️</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Attendance Analytics & Chart -->
+        <h5 class="fw-bold mb-3">Attendance Distribution</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-lg-5">
+            <div class="card card-custom p-3 h-100">
+              <h6 class="card-custom-title mb-3">Attendance Breakdown</h6>
+              <div class="chart-container" style="height:260px;">
+                <canvas id="reportAttendanceChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-7">
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <div class="stat-card">
+                  <div class="stat-info">
+                    <span class="stat-label">Total Attendance Records</span>
+                    <span class="stat-value" id="rep-att-total">0</span>
+                    <span class="stat-subtext">Total marked entries</span>
+                  </div>
+                  <div class="stat-icon primary">📋</div>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="stat-card">
+                  <div class="stat-info">
+                    <span class="stat-label">Overall Presence Rate</span>
+                    <span class="stat-value text-primary" id="rep-att-pct">0%</span>
+                    <span class="stat-subtext">Presence percentage</span>
+                  </div>
+                  <div class="stat-icon success">📈</div>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="stat-card">
+                  <div class="stat-info">
+                    <span class="stat-label">Present Count</span>
+                    <span class="stat-value text-success" id="rep-att-present">0</span>
+                    <span class="stat-subtext">Days present</span>
+                  </div>
+                  <div class="stat-icon success">✓</div>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="stat-card">
+                  <div class="stat-info">
+                    <span class="stat-label">Absent Count</span>
+                    <span class="stat-value text-danger" id="rep-att-absent">0</span>
+                    <span class="stat-subtext">Days absent</span>
+                  </div>
+                  <div class="stat-icon warning">✗</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Academic Distribution & Grade Curve -->
+        <h5 class="fw-bold mb-3">Academic Performance &amp; Grades</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-lg-8">
+            <div class="card card-custom p-3">
+              <h6 class="card-custom-title mb-3">Student Grades Distribution</h6>
+              <div class="chart-container" style="height:280px;">
+                <canvas id="reportAcademicChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="row g-3">
+              <div class="col-12">
+                <div class="stat-card">
+                  <div class="stat-info">
+                    <span class="stat-label">Average Institutional Score</span>
+                    <span class="stat-value text-primary" id="rep-acad-avg">0%</span>
+                    <span class="stat-subtext">Across all exams</span>
+                  </div>
+                  <div class="stat-icon primary">🏆</div>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="stat-card">
+                  <div class="stat-info">
+                    <span class="stat-label">Total Exam Results</span>
+                    <span class="stat-value" id="rep-acad-total">0</span>
+                    <span class="stat-subtext">Published marks entries</span>
+                  </div>
+                  <div class="stat-icon info">📑</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/chart.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script src="/frontend/js/reports.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['ADMIN', 'PRINCIPAL'])) {
+      components.renderLayout('Reports & Analytics');
+      reportsManager.init();
+    }
+  </script>
+</body>
+</html>

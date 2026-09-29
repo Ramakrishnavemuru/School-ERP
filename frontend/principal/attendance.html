@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Overview - Principal Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Institution Attendance Overview</h2>
+            <div class="page-subtitle">School-wide student attendance analytics, presence trends, and daily audits</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-primary" onclick="loadAttendanceOverview()">🔄 Refresh</button>
+          </div>
+        </div>
+
+        <!-- Metrics Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total Logs</span>
+                <span class="stat-value" id="att-total-records">0</span>
+                <span class="stat-subtext">Recorded attendances</span>
+              </div>
+              <div class="stat-icon primary">📋</div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Overall Rate</span>
+                <span class="stat-value text-primary" id="att-overall-pct">0%</span>
+                <span class="stat-subtext">Presence percentage</span>
+              </div>
+              <div class="stat-icon success">📈</div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total Present</span>
+                <span class="stat-value text-success" id="att-present-count">0</span>
+                <span class="stat-subtext">Days present</span>
+              </div>
+              <div class="stat-icon success">✓</div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total Absent</span>
+                <span class="stat-value text-danger" id="att-absent-count">0</span>
+                <span class="stat-subtext">Days absent</span>
+              </div>
+              <div class="stat-icon warning">✗</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breakdown Chart -->
+        <div class="row g-3">
+          <div class="col-lg-5 mb-3">
+            <div class="card card-custom h-100 p-3">
+              <h6 class="card-custom-title mb-3">Attendance Breakdown</h6>
+              <div class="chart-container" style="height:260px;">
+                <canvas id="principalAttChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-7 mb-3">
+            <div class="card card-custom h-100 p-3">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="card-custom-title mb-0">Class-wise Attendance Filter</h6>
+                <div class="d-flex gap-2">
+                  <input type="date" id="filter-date" class="form-control form-control-sm" onchange="loadRecords()">
+                  <select id="filter-class" class="form-select form-select-sm" onchange="loadRecords()">
+                    <option value="">All Classes</option>
+                  </select>
+                </div>
+              </div>
+              <div class="table-custom-wrapper">
+                <table class="table-custom">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Class</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="att-records-tbody">
+                    <tr><td colspan="4" class="text-center py-3 text-muted">Loading attendance records...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/chart.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    let chartInstance = null;
+
+    if (permissions.enforcePageAccess(['PRINCIPAL', 'ADMIN'])) {
+      components.renderLayout('Attendance Overview');
+      document.getElementById('filter-date').value = new Date().toISOString().split('T')[0];
+      initPage();
+    }
+
+    async function initPage() {
+      await loadClassOptions();
+      await loadAttendanceOverview();
+      await loadRecords();
+    }
+
+    async function loadClassOptions() {
+      try {
+        const classes = await api.get('/classes');
+        const sel = document.getElementById('filter-class');
+        if (sel && classes) {
+          sel.innerHTML = '<option value="">All Classes</option>' +
+            classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadAttendanceOverview() {
+      try {
+        const data = await api.get('/reports/attendance');
+        document.getElementById('att-total-records').textContent = data.total_records || 0;
+        document.getElementById('att-overall-pct').textContent = `${data.percentage || 0}%`;
+        document.getElementById('att-present-count').textContent = data.present || 0;
+        document.getElementById('att-absent-count').textContent = data.absent || 0;
+
+        const canvas = document.getElementById('principalAttChart');
+        if (canvas && window.Chart) {
+          if (chartInstance) chartInstance.destroy();
+          chartInstance = new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+              labels: ['Present', 'Absent', 'Late'],
+              datasets: [{
+                data: [data.present || 0, data.absent || 0, data.late || 0],
+                backgroundColor: ['#10b981', '#ef4444', '#f59e0b']
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false
+            }
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadRecords() {
+      const classId = document.getElementById('filter-class').value;
+      const attDate = document.getElementById('filter-date').value;
+      const tbody = document.getElementById('att-records-tbody');
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">Loading attendance...</td></tr>';
+
+      try {
+        const params = {};
+        if (classId) params.class_id = classId;
+        if (attDate) params.att_date = attDate;
+
+        const records = await api.get('/attendance', params);
+        if (!records || records.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="table-empty-state">No attendance recorded for this selection.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = records.map(r => `
+          <tr>
+            <td><strong>${r.student_name || 'Student'}</strong></td>
+            <td>${r.class_name || '—'}</td>
+            <td>${utils.formatDate(r.date)}</td>
+            <td>${utils.getStatusBadge(r.status)}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-danger py-3 text-center">${e.message}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

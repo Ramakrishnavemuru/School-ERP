@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Cards &amp; Results - Student Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Academic Results &amp; Report Cards</h2>
+            <div class="page-subtitle">Official published examination marks, letter grades, and cumulative scores</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary" onclick="resultsManager.loadStudentResults()">Refresh Scores</button>
+          </div>
+        </div>
+
+        <div id="student-results-container">
+          <div class="text-center py-4 text-muted">Loading published examination results...</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script src="/frontend/js/results.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['STUDENT'])) {
+      components.renderLayout('Report Cards');
+      resultsManager.loadStudentResults();
+    }
+  </script>
+</body>
+</html>

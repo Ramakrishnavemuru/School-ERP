@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Principal Executive Dashboard - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Executive Dashboard</h2>
+            <div class="page-subtitle">Academic leadership overview, staff oversight, and grievance alerts</div>
+          </div>
+          <div>
+            <span class="badge bg-primary px-3 py-2 fs-6">Principal Office</span>
+          </div>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Enrolled Students</span>
+                <span class="stat-value" id="total-students">0</span>
+                <span class="stat-subtext">Active student body</span>
+              </div>
+              <div class="stat-icon primary">🎓</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Faculty Staff</span>
+                <span class="stat-value" id="total-teachers">0</span>
+                <span class="stat-subtext">Instructors &amp; teachers</span>
+              </div>
+              <div class="stat-icon success">👨‍🏫</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Pending Leaves</span>
+                <span class="stat-value text-warning" id="pending-leaves">0</span>
+                <span class="stat-subtext">Awaiting executive approval</span>
+              </div>
+              <div class="stat-icon warning">🏖️</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Open Complaints</span>
+                <span class="stat-value text-danger" id="pending-complaints">0</span>
+                <span class="stat-subtext">Require review</span>
+              </div>
+              <div class="stat-icon info">⚠️</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Leave Requests & Complaints -->
+        <div class="row g-3">
+          <div class="col-lg-6 mb-3">
+            <div class="card card-custom h-100">
+              <div class="card-custom-header">
+                <h6 class="card-custom-title">Recent Leave Applications</h6>
+                <a href="/frontend/principal/leave-requests.html" class="btn btn-sm btn-link text-decoration-none">View All</a>
+              </div>
+              <div class="card-custom-body p-0">
+                <div class="table-custom-wrapper">
+                  <table class="table-custom">
+                    <thead>
+                      <tr>
+                        <th>Applicant</th>
+                        <th>Role</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recent-leaves-tbody">
+                      <tr><td colspan="4" class="text-center py-3 text-muted">Loading leaves...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-3">
+            <div class="card card-custom h-100">
+              <div class="card-custom-header">
+                <h6 class="card-custom-title">Pending Grievances &amp; Complaints</h6>
+                <a href="/frontend/principal/complaints.html" class="btn btn-sm btn-link text-decoration-none">View All</a>
+              </div>
+              <div class="card-custom-body p-0">
+                <div class="table-custom-wrapper">
+                  <table class="table-custom">
+                    <thead>
+                      <tr>
+                        <th>Raised By</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recent-complaints-tbody">
+                      <tr><td colspan="3" class="text-center py-3 text-muted">Loading grievances...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['PRINCIPAL', 'ADMIN'])) {
+      components.renderLayout('Executive Dashboard');
+      loadPrincipalDashboard();
+    }
+
+    async function loadPrincipalDashboard() {
+      try {
+        const data = await api.get('/principal/dashboard');
+        document.getElementById('total-students').textContent = data.total_students || 0;
+        document.getElementById('total-teachers').textContent = data.total_teachers || 0;
+        document.getElementById('pending-leaves').textContent = data.pending_leaves || 0;
+        document.getElementById('pending-complaints').textContent = data.pending_complaints || 0;
+
+        const leavesBody = document.getElementById('recent-leaves-tbody');
+        if (leavesBody) {
+          if (!data.recent_leaves || data.recent_leaves.length === 0) {
+            leavesBody.innerHTML = '<tr><td colspan="4" class="table-empty-state">No leave applications.</td></tr>';
+          } else {
+            leavesBody.innerHTML = data.recent_leaves.map(l => `
+              <tr>
+                <td><strong>${l.user}</strong></td>
+                <td><span class="badge bg-secondary">${l.role}</span></td>
+                <td>${l.type}</td>
+                <td>${utils.getStatusBadge(l.status)}</td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        const compBody = document.getElementById('recent-complaints-tbody');
+        if (compBody) {
+          if (!data.recent_complaints || data.recent_complaints.length === 0) {
+            compBody.innerHTML = '<tr><td colspan="3" class="table-empty-state">No active complaints.</td></tr>';
+          } else {
+            compBody.innerHTML = data.recent_complaints.map(c => `
+              <tr>
+                <td><strong>${c.user}</strong></td>
+                <td>${c.title}</td>
+                <td>${utils.getStatusBadge(c.status)}</td>
+              </tr>
+            `).join('');
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Child Attendance - Parent Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Child Attendance History</h2>
+            <div class="page-subtitle">Track classroom attendance logs, total sessions, and presence percentages</div>
+          </div>
+          <div>
+            <select id="child-select" class="form-select" onchange="loadChildAttendance()">
+              <option value="">Select Child</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Attendance Rate</span>
+                <span class="stat-value text-success" id="att-pct">0%</span>
+                <span class="stat-subtext">Overall compliance</span>
+              </div>
+              <div class="stat-icon success">📈</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total School Days</span>
+                <span class="stat-value" id="att-total-days">0</span>
+                <span class="stat-subtext">Session days</span>
+              </div>
+              <div class="stat-icon primary">📅</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Days Present</span>
+                <span class="stat-value text-success" id="att-present-days">0</span>
+                <span class="stat-subtext">Attended</span>
+              </div>
+              <div class="stat-icon success">✓</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Days Absent</span>
+                <span class="stat-value text-danger" id="att-absent-days">0</span>
+                <span class="stat-subtext">Unattended</span>
+              </div>
+              <div class="stat-icon warning">✗</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Teacher Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="child-attendance-tbody">
+              <tr><td colspan="3" class="text-center py-4 text-muted">Select a child to view attendance...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['PARENT'])) {
+      components.renderLayout('Child Attendance');
+      initPage();
+    }
+
+    async function initPage() {
+      try {
+        const children = await api.get('/parent/children');
+        const sel = document.getElementById('child-select');
+        if (!children || children.length === 0) {
+          sel.innerHTML = '<option value="">No linked children</option>';
+          return;
+        }
+
+        const params = utils.getQueryParams();
+        const activeId = params.child_id ? parseInt(params.child_id) : children[0].id;
+
+        sel.innerHTML = children.map(c => `
+          <option value="${c.id}" ${c.id === activeId ? 'selected' : ''}>${c.name} (${c.class_name})</option>
+        `).join('');
+
+        loadChildAttendance();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadChildAttendance() {
+      const childId = document.getElementById('child-select').value;
+      if (!childId) return;
+
+      const tbody = document.getElementById('child-attendance-tbody');
+      tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">Loading attendance records...</td></tr>';
+
+      try {
+        const data = await api.get(`/parent/child/${childId}/attendance`);
+        if (data && data.stats) {
+          document.getElementById('att-pct').textContent = `${data.stats.percentage}%`;
+          document.getElementById('att-total-days').textContent = data.stats.total_days;
+          document.getElementById('att-present-days').textContent = data.stats.present_days;
+          document.getElementById('att-absent-days').textContent = data.stats.absent_days;
+        }
+
+        if (!data.records || data.records.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="table-empty-state">No attendance records found for this student.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.records.map(r => `
+          <tr>
+            <td>${utils.formatDate(r.date)}</td>
+            <td>${utils.getStatusBadge(r.status)}</td>
+            <td>${r.remarks || '—'}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="3" class="text-danger py-4 text-center">${e.message}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

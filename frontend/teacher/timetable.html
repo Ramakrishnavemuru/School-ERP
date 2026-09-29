@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Timetable - Teacher Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">My Teaching Schedule</h2>
+            <div class="page-subtitle">Weekly lecture hours, scheduled classrooms, and subject allocations</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary" onclick="loadTimetable()">Refresh Schedule</button>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="card card-custom p-3 mb-3">
+          <div class="row g-2">
+            <div class="col-md-10">
+              <select id="filter-day" class="form-select" onchange="filterTimetable()">
+                <option value="">Full Weekly Schedule (Monday - Saturday)</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-primary w-100" onclick="filterTimetable()">Filter</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Time Window</th>
+                <th>Subject</th>
+                <th>Class &amp; Section</th>
+                <th>Assigned Room</th>
+              </tr>
+            </thead>
+            <tbody id="timetable-tbody">
+              <tr><td colspan="5" class="text-center py-4 text-muted">Loading schedule...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    let fullTimetable = [];
+
+    if (permissions.enforcePageAccess(['TEACHER'])) {
+      components.renderLayout('Daily Timetable');
+      loadTimetable();
+    }
+
+    async function loadTimetable() {
+      const tbody = document.getElementById('timetable-tbody');
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Loading schedule...</td></tr>';
+
+      try {
+        const entries = await api.get('/teacher/timetable');
+        fullTimetable = entries || [];
+        filterTimetable();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-danger py-4 text-center">${e.message}</td></tr>`;
+      }
+    }
+
+    function filterTimetable() {
+      const day = document.getElementById('filter-day').value;
+      const tbody = document.getElementById('timetable-tbody');
+
+      const filtered = fullTimetable.filter(e => {
+        if (!day) return true;
+        return e.day_of_week && e.day_of_week.toLowerCase() === day.toLowerCase();
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="table-empty-state">No scheduled lectures for this day.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(e => `
+        <tr>
+          <td><span class="badge bg-secondary">${e.day_of_week}</span></td>
+          <td><strong>${e.start_time} - ${e.end_time}</strong></td>
+          <td><strong>${e.subject_name}</strong></td>
+          <td>${e.class_name} ${e.section_name ? `(${e.section_name})` : ''}</td>
+          <td>${e.room_number || '—'}</td>
+        </tr>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

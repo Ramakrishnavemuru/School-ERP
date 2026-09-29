@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mark Attendance - Teacher Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Classroom Daily Attendance</h2>
+            <div class="page-subtitle">Record and submit student daily attendance status for your classes</div>
+          </div>
+          <div>
+            <button id="save-attendance-btn" class="btn btn-success d-none" onclick="attendanceManager.saveAttendance()">
+              💾 Save &amp; Submit Attendance
+            </button>
+          </div>
+        </div>
+
+        <!-- Selection Panel -->
+        <div class="card card-custom p-4 mb-4">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Select Class *</label>
+              <select id="att-class-select" class="form-select" required>
+                <option value="">Select Class</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Select Section</label>
+              <select id="att-section-select" class="form-select">
+                <option value="">Select Section</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Attendance Date *</label>
+              <input type="date" id="attendance-date" class="form-control" required>
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-primary w-100" onclick="handleLoadStudents()">Load Roster</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attendance Marking Table -->
+        <div class="card card-custom p-3">
+          <div class="table-custom-wrapper">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">#</th>
+                  <th>Admission No</th>
+                  <th>Student Full Name</th>
+                  <th>Roll No</th>
+                  <th style="width: 320px;">Attendance Status</th>
+                </tr>
+              </thead>
+              <tbody id="attendance-marking-tbody">
+                <tr><td colspan="5" class="text-center py-4 text-muted">Select class, section, and date, then click "Load Roster"</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script src="/frontend/js/attendance.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['TEACHER', 'ADMIN'])) {
+      components.renderLayout('Daily Attendance');
+      attendanceManager.initTeacher();
+    }
+
+    async function handleLoadStudents() {
+      await attendanceManager.loadClassStudents();
+      const btn = document.getElementById('save-attendance-btn');
+      if (attendanceManager.currentStudents && attendanceManager.currentStudents.length > 0) {
+        btn.classList.remove('d-none');
+      } else {
+        btn.classList.add('d-none');
+      }
+    }
+  </script>
+</body>
+</html>

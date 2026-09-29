@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Profile Details - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <div class="mb-1"><a href="/frontend/admin/students.html" class="text-decoration-none small">&larr; Back to Students List</a></div>
+            <h2 class="page-title" id="detail-name">Student Profile</h2>
+            <div class="page-subtitle">Comprehensive student academic, attendance, and fee summary</div>
+          </div>
+          <div>
+            <span class="badge bg-primary px-3 py-2 fs-6" id="detail-class">Class</span>
+          </div>
+        </div>
+
+        <!-- Quick Summary Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Attendance Rate</span>
+                <span class="stat-value text-success" id="att-percentage">0%</span>
+                <span class="stat-subtext" id="att-present">0 / 0 Days</span>
+              </div>
+              <div class="stat-icon success">📋</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total Fees</span>
+                <span class="stat-value text-dark" id="fee-total">$0.00</span>
+                <span class="stat-subtext">Assigned tuition</span>
+              </div>
+              <div class="stat-icon info">💳</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Fees Paid</span>
+                <span class="stat-value text-success" id="fee-paid">$0.00</span>
+                <span class="stat-subtext">Cleared payments</span>
+              </div>
+              <div class="stat-icon success">✅</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Outstanding Balance</span>
+                <span class="stat-value text-danger" id="fee-balance">$0.00</span>
+                <span class="stat-subtext">Pending dues</span>
+              </div>
+              <div class="stat-icon warning">⚠️</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student Details Grid -->
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="card card-custom h-100 p-4">
+              <h5 class="fw-bold mb-3 border-bottom pb-2">Academic &amp; Registration Info</h5>
+              <table class="table table-borderless">
+                <tbody>
+                  <tr>
+                    <th class="text-muted w-40">Admission Number:</th>
+                    <td id="detail-adm" class="fw-bold">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Roll Number:</th>
+                    <td id="detail-roll">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Gender:</th>
+                    <td id="detail-gender">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Blood Group:</th>
+                    <td id="detail-blood">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Date of Birth:</th>
+                    <td id="detail-dob">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="card card-custom h-100 p-4">
+              <h5 class="fw-bold mb-3 border-bottom pb-2">Contact &amp; Guardian Info</h5>
+              <table class="table table-borderless">
+                <tbody>
+                  <tr>
+                    <th class="text-muted w-40">Parent / Guardian:</th>
+                    <td id="detail-parent" class="fw-bold">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Email Address:</th>
+                    <td id="detail-email">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Contact Phone:</th>
+                    <td id="detail-phone">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Residential Address:</th>
+                    <td id="detail-address">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script src="/frontend/js/students.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['ADMIN', 'PRINCIPAL'])) {
+      components.renderLayout('Student Details');
+      studentsManager.loadStudentDetails();
+    }
+  </script>
+</body>
+</html>

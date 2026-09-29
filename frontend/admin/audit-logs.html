@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Audit Logs - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Security &amp; Audit Logs</h2>
+            <div class="page-subtitle">Immutable log trail of administrative mutations, security logins, and record changes</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary" onclick="loadAuditLogs(1)">Refresh Logs</button>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="card card-custom p-3 mb-3">
+          <div class="row g-2">
+            <div class="col-md-5">
+              <input type="text" id="filter-action" class="form-control" placeholder="Filter by action (e.g. USER_CREATE, AUTH_LOGIN)...">
+            </div>
+            <div class="col-md-5">
+              <input type="text" id="filter-entity" class="form-control" placeholder="Filter by entity (e.g. Student, User, Notice)...">
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-primary w-100" onclick="loadAuditLogs(1)">Filter</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Operator</th>
+                <th>Action</th>
+                <th>Entity Target</th>
+                <th>Details</th>
+                <th>IP Address</th>
+              </tr>
+            </thead>
+            <tbody id="audit-table-body">
+              <tr><td colspan="6" class="text-center py-4 text-muted">Loading audit log entries...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="pagination-container" class="mt-3"></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    let curPage = 1;
+
+    if (permissions.enforcePageAccess(['ADMIN'])) {
+      components.renderLayout('System Audit Logs');
+      loadAuditLogs(1);
+
+      document.getElementById('filter-action').addEventListener('input', utils.debounce(() => loadAuditLogs(1), 350));
+      document.getElementById('filter-entity').addEventListener('input', utils.debounce(() => loadAuditLogs(1), 350));
+    }
+
+    async function loadAuditLogs(page = 1) {
+      curPage = page;
+      const tbody = document.getElementById('audit-table-body');
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Loading audit log entries...</td></tr>';
+
+      const action = document.getElementById('filter-action').value.trim();
+      const entity = document.getElementById('filter-entity').value.trim();
+
+      try {
+        const res = await api.get('/admin/audit-logs', {
+          page: curPage,
+          page_size: 20,
+          action: action || undefined,
+          entity: entity || undefined
+        });
+
+        if (!res.items || res.items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="table-empty-state">No audit logs found matching criteria.</td></tr>';
+          components.renderPagination('pagination-container', 1, 1, 'loadAuditLogs');
+          return;
+        }
+
+        tbody.innerHTML = res.items.map(l => `
+          <tr>
+            <td class="small text-muted">${utils.formatDateTime(l.timestamp)}</td>
+            <td><strong>${l.username}</strong></td>
+            <td><span class="badge bg-secondary font-monospace">${l.action}</span></td>
+            <td>${l.entity} ${l.entity_id ? `(#${l.entity_id})` : ''}</td>
+            <td class="small text-secondary">${l.details || '—'}</td>
+            <td class="small text-muted font-monospace">${l.ip_address || '127.0.0.1'}</td>
+          </tr>
+        `).join('');
+
+        components.renderPagination('pagination-container', res.page, res.total_pages, 'loadAuditLogs');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-danger py-4 text-center">${e.message}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

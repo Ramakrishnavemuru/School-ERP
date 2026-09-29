@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Dashboard - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title" id="teacher-welcome-title">Faculty Dashboard</h2>
+            <div class="page-subtitle" id="teacher-welcome-dept">Instructor Portal &amp; Classroom Overview</div>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="/frontend/teacher/attendance.html" class="btn btn-primary">📋 Mark Attendance</a>
+            <a href="/frontend/teacher/assignments.html" class="btn btn-outline-primary">+ New Assignment</a>
+          </div>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Assigned Classes</span>
+                <span class="stat-value" id="stat-classes">0</span>
+                <span class="stat-subtext">Teaching sections</span>
+              </div>
+              <div class="stat-icon primary">🏫</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Students Under Care</span>
+                <span class="stat-value" id="stat-students">0</span>
+                <span class="stat-subtext">Total enrolled</span>
+              </div>
+              <div class="stat-icon success">🎓</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Active Assignments</span>
+                <span class="stat-value" id="stat-assignments">0</span>
+                <span class="stat-subtext">Coursework posted</span>
+              </div>
+              <div class="stat-icon info">📝</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Submissions to Grade</span>
+                <span class="stat-value text-danger" id="stat-grading">0</span>
+                <span class="stat-subtext">Pending review</span>
+              </div>
+              <div class="stat-icon warning">📥</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Schedule & Quick Links -->
+        <div class="row g-3">
+          <div class="col-lg-7 mb-3">
+            <div class="card card-custom h-100">
+              <div class="card-custom-header">
+                <h6 class="card-custom-title">Today's Class Schedule</h6>
+                <a href="/frontend/teacher/timetable.html" class="btn btn-sm btn-link text-decoration-none">Full Timetable</a>
+              </div>
+              <div class="card-custom-body p-0">
+                <div class="table-custom-wrapper">
+                  <table class="table-custom">
+                    <thead>
+                      <tr>
+                        <th>Time</th>
+                        <th>Subject</th>
+                        <th>Class &amp; Section</th>
+                        <th>Room</th>
+                      </tr>
+                    </thead>
+                    <tbody id="today-timetable-tbody">
+                      <tr><td colspan="4" class="text-center py-3 text-muted">Loading schedule...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-5 mb-3">
+            <div class="card card-custom h-100 p-3">
+              <h6 class="card-custom-title mb-3">Quick Classroom Actions</h6>
+              <div class="d-grid gap-2">
+                <a href="/frontend/teacher/attendance.html" class="btn btn-light text-start border p-3">
+                  <div class="fw-bold">📋 Daily Attendance</div>
+                  <div class="text-muted small">Mark student presence for your classes</div>
+                </a>
+                <a href="/frontend/teacher/marks.html" class="btn btn-light text-start border p-3">
+                  <div class="fw-bold">✍️ Enter Exam Marks</div>
+                  <div class="text-muted small">Input student scores for scheduled exams</div>
+                </a>
+                <a href="/frontend/teacher/study-materials.html" class="btn btn-light text-start border p-3">
+                  <div class="fw-bold">📂 Upload Study Materials</div>
+                  <div class="text-muted small">Share syllabus notes, lecture slides, and PDFs</div>
+                </a>
+                <a href="/frontend/teacher/leave.html" class="btn btn-light text-start border p-3">
+                  <div class="fw-bold">🏖️ Apply for Leave</div>
+                  <div class="text-muted small">Submit formal leave request to Principal</div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['TEACHER'])) {
+      components.renderLayout('Faculty Dashboard');
+      loadTeacherDashboard();
+    }
+
+    async function loadTeacherDashboard() {
+      try {
+        const [dash, timetable] = await Promise.all([
+          api.get('/dashboard'),
+          api.get('/teacher/timetable')
+        ]);
+
+        if (dash) {
+          document.getElementById('teacher-welcome-title').textContent = `Welcome, ${dash.teacher_name || 'Faculty Member'}`;
+          document.getElementById('teacher-welcome-dept').textContent = `Department of ${dash.department || 'Academics'} • Classroom Overview`;
+          document.getElementById('stat-classes').textContent = dash.assigned_classes_count || 0;
+          document.getElementById('stat-students').textContent = dash.total_students || 0;
+          document.getElementById('stat-assignments').textContent = dash.total_assignments || 0;
+          document.getElementById('stat-grading').textContent = dash.pending_grading || 0;
+        }
+
+        const tbody = document.getElementById('today-timetable-tbody');
+        if (tbody) {
+          const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const todayName = days[new Date().getDay()];
+          const todaysPeriods = (timetable || []).filter(t => t.day_of_week && t.day_of_week.toLowerCase() === todayName.toLowerCase());
+
+          const displayPeriods = todaysPeriods.length > 0 ? todaysPeriods : (timetable || []).slice(0, 5);
+
+          if (displayPeriods.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="table-empty-state">No scheduled lectures today.</td></tr>';
+          } else {
+            tbody.innerHTML = displayPeriods.map(p => `
+              <tr>
+                <td><strong>${p.start_time} - ${p.end_time}</strong></td>
+                <td>${p.subject_name || '—'}</td>
+                <td>${p.class_name} ${p.section_name ? `(${p.section_name})` : ''}</td>
+                <td>${p.room_number || '—'}</td>
+              </tr>
+            `).join('');
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>

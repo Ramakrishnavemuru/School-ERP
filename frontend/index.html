@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>School/College ERP</title>
+</head>
+<body>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script>
+    if (auth.isAuthenticated()) {
+      auth.redirectBasedOnRole(auth.getRole());
+    } else {
+      window.location.href = '/frontend/login.html';
+    }
+  </script>
+</body>
+</html>

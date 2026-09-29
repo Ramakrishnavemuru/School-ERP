@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Students Directory - Principal Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Students Directory</h2>
+            <div class="page-subtitle">Executive student records overview and academic enrollment verification</div>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="card card-custom p-3 mb-3">
+          <div class="row g-2">
+            <div class="col-md-6">
+              <input type="text" id="student-search" class="form-control" placeholder="Search by name, roll no, or admission number...">
+            </div>
+            <div class="col-md-4">
+              <select id="filter-class" class="form-select">
+                <option value="">All Classes</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-outline-secondary w-100" onclick="studentsManager.loadStudents(1)">Refresh</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Admission No</th>
+                <th>Student Name</th>
+                <th>Class &amp; Section</th>
+                <th>Roll No</th>
+                <th>Gender</th>
+                <th>Parent/Guardian</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="students-table-body">
+              <tr><td colspan="7" class="text-center py-4 text-muted">Loading students...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="pagination-container" class="mt-3"></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script src="/frontend/js/students.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['PRINCIPAL', 'ADMIN'])) {
+      components.renderLayout('Students Directory');
+      studentsManager.init();
+    }
+  </script>
+</body>
+</html>

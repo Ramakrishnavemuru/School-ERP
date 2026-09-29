@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title" id="student-name">Welcome Back!</h2>
+            <div class="page-subtitle" id="student-class-info">Student Academic Portal</div>
+          </div>
+          <div>
+            <span class="badge bg-primary px-3 py-2 fs-6" id="student-adm">ADM-NO</span>
+          </div>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Attendance Rate</span>
+                <span class="stat-value text-success" id="dash-att-pct">0%</span>
+                <span class="stat-subtext" id="dash-att-days">0 Days Present</span>
+              </div>
+              <div class="stat-icon success">📋</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Fee Balance Due</span>
+                <span class="stat-value text-danger" id="dash-fee-balance">$0.00</span>
+                <span class="stat-subtext">Outstanding dues</span>
+              </div>
+              <div class="stat-icon warning">💳</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Assignments</span>
+                <span class="stat-value" id="dash-assignment-count">0</span>
+                <span class="stat-subtext">Current term tasks</span>
+              </div>
+              <div class="stat-icon info">📝</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Recent Grades</span>
+                <span class="stat-value text-primary" id="dash-avg-grade">—</span>
+                <span class="stat-subtext">Published evaluations</span>
+              </div>
+              <div class="stat-icon primary">🏆</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Assignments & Announcements -->
+        <div class="row g-3">
+          <div class="col-lg-7 mb-3">
+            <div class="card card-custom h-100">
+              <div class="card-custom-header">
+                <h6 class="card-custom-title">Upcoming Class Assignments</h6>
+                <a href="/frontend/student/assignments.html" class="btn btn-sm btn-link text-decoration-none">View All</a>
+              </div>
+              <div class="card-custom-body p-0">
+                <div class="table-custom-wrapper">
+                  <table class="table-custom">
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Subject</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="student-dash-assignments-tbody">
+                      <tr><td colspan="4" class="text-center py-3 text-muted">Loading assignments...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-5 mb-3">
+            <div class="card card-custom h-100">
+              <div class="card-custom-header">
+                <h6 class="card-custom-title">Latest School Notices</h6>
+                <a href="/frontend/student/notices.html" class="btn btn-sm btn-link text-decoration-none">All Notices</a>
+              </div>
+              <div class="card-custom-body">
+                <ul class="activity-list" id="student-dash-notices-list">
+                  <li class="text-muted small py-3">Loading notices...</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['STUDENT'])) {
+      components.renderLayout('Student Dashboard');
+      loadStudentDashboard();
+    }
+
+    async function loadStudentDashboard() {
+      try {
+        const [profile, att, fees, assignments, results, notices] = await Promise.all([
+          api.get('/student/profile'),
+          api.get('/student/attendance'),
+          api.get('/student/fees'),
+          api.get('/student/assignments'),
+          api.get('/student/results'),
+          api.get('/notices')
+        ]);
+
+        if (profile) {
+          document.getElementById('student-name').textContent = `Welcome, ${profile.full_name || 'Student'}`;
+          document.getElementById('student-class-info').textContent = `${profile.class_name || ''} ${profile.section_name ? `(${profile.section_name})` : ''} • Academic Portal`;
+          document.getElementById('student-adm').textContent = profile.admission_number || 'ADM';
+        }
+
+        if (att && att.stats) {
+          document.getElementById('dash-att-pct').textContent = `${att.stats.percentage}%`;
+          document.getElementById('dash-att-days').textContent = `${att.stats.present_days} / ${att.stats.total_days} Days Present`;
+        }
+
+        if (fees) {
+          document.getElementById('dash-fee-balance').textContent = utils.formatCurrency(fees.remaining_balance || 0);
+        }
+
+        document.getElementById('dash-assignment-count').textContent = (assignments || []).length;
+
+        if (results && results.length > 0) {
+          document.getElementById('dash-avg-grade').textContent = results[0].grade || 'A';
+        }
+
+        // Render assignments
+        const tbody = document.getElementById('student-dash-assignments-tbody');
+        if (tbody) {
+          if (!assignments || assignments.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="table-empty-state">No pending assignments.</td></tr>';
+          } else {
+            tbody.innerHTML = assignments.slice(0, 5).map(a => `
+              <tr>
+                <td><strong>${a.title}</strong></td>
+                <td>${a.subject_name}</td>
+                <td>${utils.formatDate(a.due_date)}</td>
+                <td>${a.submission ? utils.getStatusBadge(a.submission.status) : '<span class="badge bg-warning text-dark">Pending</span>'}</td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        // Render notices
+        const noticesList = document.getElementById('student-dash-notices-list');
+        if (noticesList) {
+          if (!notices || notices.length === 0) {
+            noticesList.innerHTML = '<li class="text-muted small py-3">No announcements at this time.</li>';
+          } else {
+            noticesList.innerHTML = notices.slice(0, 4).map(n => `
+              <li class="activity-item">
+                <span class="activity-dot bg-primary"></span>
+                <div class="activity-content">
+                  <div class="fw-bold text-dark">${n.title}</div>
+                  <div class="text-muted small">${utils.formatDate(n.publish_date)}</div>
+                </div>
+              </li>
+            `).join('');
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>

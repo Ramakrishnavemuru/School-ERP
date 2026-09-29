@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Child Profile - Parent Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <div class="mb-1"><a href="/frontend/parent/children.html" class="text-decoration-none small">&larr; Back to Children Directory</a></div>
+            <h2 class="page-title" id="child-name">Child Profile</h2>
+            <div class="page-subtitle" id="child-class">Student Enrollment Overview</div>
+          </div>
+          <div>
+            <span class="badge bg-primary px-3 py-2 fs-6" id="child-adm">ADM</span>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <!-- Child Demographic Information -->
+          <div class="col-lg-6">
+            <div class="card card-custom h-100 p-4">
+              <h5 class="fw-bold mb-3 border-bottom pb-2">Academic Registration</h5>
+              <table class="table table-borderless">
+                <tbody>
+                  <tr>
+                    <th class="text-muted w-40">Roll Number:</th>
+                    <td id="child-roll">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Gender:</th>
+                    <td id="child-gender">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Blood Group:</th>
+                    <td id="child-blood">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Date of Birth:</th>
+                    <td id="child-dob">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Residential Address:</th>
+                    <td id="child-address">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Academic Quick Links -->
+          <div class="col-lg-6">
+            <div class="card card-custom h-100 p-4">
+              <h5 class="fw-bold mb-3 border-bottom pb-2">Academic Modules</h5>
+              <div class="d-grid gap-2">
+                <a id="link-child-att" href="#" class="btn btn-light text-start border p-3">
+                  <div class="fw-bold">📋 View Attendance Record</div>
+                  <div class="text-muted small">Daily logs, total school days, and percentage</div>
+                </a>
+                <a id="link-child-assign" href="#" class="btn btn-light text-start border p-3">
+                  <div class="fw-bold">📝 Homework &amp; Assignments</div>
+                  <div class="text-muted small">Track pending tasks and teacher scores</div>
+                </a>
+                <a id="link-child-res" href="#" class="btn btn-light text-start border p-3">
+                  <div class="fw-bold">🏆 Examination Results &amp; Marks</div>
+                  <div class="text-muted small">Published exam cards, percentage, and letter grades</div>
+                </a>
+                <a id="link-child-fee" href="#" class="btn btn-light text-start border p-3">
+                  <div class="fw-bold">💳 Tuition Fees &amp; Payments</div>
+                  <div class="text-muted small">View fee ledger, paid amounts, and due balances</div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['PARENT'])) {
+      components.renderLayout('Child Profile');
+      loadProfile();
+    }
+
+    async function loadProfile() {
+      const params = utils.getQueryParams();
+      let childId = params.child_id;
+
+      if (!childId) {
+        const children = await api.get('/parent/children');
+        if (children && children.length > 0) {
+          childId = children[0].id;
+        } else {
+          window.location.href = '/frontend/parent/children.html';
+          return;
+        }
+      }
+
+      try {
+        const p = await api.get(`/parent/child/${childId}/profile`);
+        const setText = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = val || '—';
+        };
+
+        setText('child-name', p.name);
+        setText('child-class', `${p.class_name || ''} ${p.section_name ? `(${p.section_name})` : ''} • Enrolled Student`);
+        setText('child-adm', p.admission_number);
+        setText('child-roll', p.roll_number);
+        setText('child-gender', p.gender);
+        setText('child-blood', p.blood_group);
+        setText('child-dob', utils.formatDate(p.date_of_birth));
+        setText('child-address', p.address);
+
+        document.getElementById('link-child-att').href = `/frontend/parent/attendance.html?child_id=${childId}`;
+        document.getElementById('link-child-assign').href = `/frontend/parent/assignments.html?child_id=${childId}`;
+        document.getElementById('link-child-res').href = `/frontend/parent/results.html?child_id=${childId}`;
+        document.getElementById('link-child-fee').href = `/frontend/parent/fees.html?child_id=${childId}`;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>

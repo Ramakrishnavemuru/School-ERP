@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Departments - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Departments</h2>
+            <div class="page-subtitle">Manage academic and administrative faculties and divisions</div>
+          </div>
+          <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDeptModal">
+              + New Department
+            </button>
+          </div>
+        </div>
+
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Department Name</th>
+                <th>Description</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="departments-tbody">
+              <tr><td colspan="5" class="text-center py-4 text-muted">Loading departments...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Add Department Modal -->
+        <div class="modal fade" id="addDeptModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <form id="add-dept-form" onsubmit="createDepartment(event)">
+                <div class="modal-header">
+                  <h5 class="modal-title fw-bold">Create Department</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label">Department Name *</label>
+                    <input type="text" name="name" class="form-control" required placeholder="e.g. Computer Science">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Department Code *</label>
+                    <input type="text" name="code" class="form-control" required placeholder="e.g. CS">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Department overview..."></textarea>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Create Department</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['ADMIN'])) {
+      components.renderLayout('Departments');
+      loadDepartments();
+    }
+
+    async function loadDepartments() {
+      const tbody = document.getElementById('departments-tbody');
+      try {
+        const depts = await api.get('/departments');
+        if (!depts || depts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="table-empty-state">No departments configured yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = depts.map(d => `
+          <tr>
+            <td><span class="badge bg-secondary font-monospace">${d.code}</span></td>
+            <td><strong>${d.name}</strong></td>
+            <td>${d.description || '—'}</td>
+            <td>${utils.formatDate(d.created_at)}</td>
+            <td>
+              <button class="table-action-btn text-danger" onclick="deleteDepartment(${d.id})" title="Delete">🗑️</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-danger py-4 text-center">${e.message}</td></tr>`;
+      }
+    }
+
+    async function createDepartment(e) {
+      e.preventDefault();
+      const form = document.getElementById('add-dept-form');
+      const payload = {
+        name: form.name.value.trim(),
+        code: form.code.value.trim(),
+        description: form.description.value.trim() || null
+      };
+
+      try {
+        await api.post('/departments', payload);
+        utils.showToast('Department created successfully!', 'success');
+        form.reset();
+        bootstrap.Modal.getInstance(document.getElementById('addDeptModal')).hide();
+        loadDepartments();
+      } catch (err) {
+        utils.showToast(err.message, 'danger');
+      }
+    }
+
+    async function deleteDepartment(id) {
+      if (!confirm('Are you sure you want to delete this department?')) return;
+      try {
+        await api.delete(`/departments/${id}`);
+        utils.showToast('Department deleted successfully', 'success');
+        loadDepartments();
+      } catch (e) {
+        utils.showToast(e.message, 'danger');
+      }
+    }
+  </script>
+</body>
+</html>

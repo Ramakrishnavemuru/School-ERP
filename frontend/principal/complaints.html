@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grievance &amp; Complaints - Principal Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Grievances &amp; Complaints</h2>
+            <div class="page-subtitle">Review, investigate, and resolve grievances reported by students, parents, or staff</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary" onclick="loadComplaints()">Refresh Grievances</button>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="card card-custom p-3 mb-3">
+          <div class="row g-2">
+            <div class="col-md-10">
+              <select id="filter-complaint-status" class="form-select" onchange="loadComplaints()">
+                <option value="">All Complaints</option>
+                <option value="PENDING" selected>Pending Investigation</option>
+                <option value="IN_REVIEW">In Review</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="REJECTED">Dismissed</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-primary w-100" onclick="loadComplaints()">Filter</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Submitted By</th>
+                <th>Role</th>
+                <th>Subject / Title</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Resolution Notes</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="complaints-tbody">
+              <tr><td colspan="8" class="text-center py-4 text-muted">Loading grievances...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Resolve Complaint Modal -->
+        <div class="modal fade" id="resolveComplaintModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <form id="resolve-complaint-form" onsubmit="submitComplaintResolution(event)">
+                <input type="hidden" id="resolve-complaint-id">
+                <div class="modal-header">
+                  <h5 class="modal-title fw-bold">Resolve / Update Grievance</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <h6 id="resolve-complaint-title" class="fw-bold mb-2"></h6>
+                  <p id="resolve-complaint-desc" class="small text-muted mb-3 bg-light p-2 rounded"></p>
+                  <div class="mb-3">
+                    <label class="form-label">Status Update *</label>
+                    <select name="status" id="resolve-status" class="form-select" required>
+                      <option value="RESOLVED">Mark as Resolved</option>
+                      <option value="IN_REVIEW">Set to In Review / Investigating</option>
+                      <option value="REJECTED">Dismiss / Reject Complaint</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Official Resolution Notes *</label>
+                    <textarea name="resolution" id="resolve-notes" class="form-control" rows="3" required placeholder="Provide clear feedback or corrective action taken..."></textarea>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Save Resolution</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['PRINCIPAL', 'ADMIN'])) {
+      components.renderLayout('Grievances & Complaints');
+      loadComplaints();
+    }
+
+    async function loadComplaints() {
+      const statusFilter = document.getElementById('filter-complaint-status').value;
+      const tbody = document.getElementById('complaints-tbody');
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Loading grievances...</td></tr>';
+
+      try {
+        const params = {};
+        if (statusFilter) params.status_filter = statusFilter;
+        const complaints = await api.get('/complaints', params);
+
+        if (!complaints || complaints.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="table-empty-state">No complaints matching filter.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = complaints.map(c => `
+          <tr>
+            <td><strong>${c.user_name}</strong></td>
+            <td><span class="badge bg-secondary">${c.user_role}</span></td>
+            <td><strong>${c.title}</strong></td>
+            <td class="small text-secondary" style="max-width:240px;">${c.description}</td>
+            <td>${utils.getStatusBadge(c.status)}</td>
+            <td class="small text-muted" style="max-width:200px;">${c.resolution || '—'}</td>
+            <td class="small text-muted">${utils.formatDate(c.created_at)}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" onclick="openResolveModal(${c.id}, '${escapeQuotes(c.title)}', '${escapeQuotes(c.description)}')">
+                Resolve
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-danger py-4 text-center">${e.message}</td></tr>`;
+      }
+    }
+
+    function escapeQuotes(str) {
+      return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    function openResolveModal(id, title, desc) {
+      document.getElementById('resolve-complaint-id').value = id;
+      document.getElementById('resolve-complaint-title').textContent = title;
+      document.getElementById('resolve-complaint-desc').textContent = desc;
+      const modal = new bootstrap.Modal(document.getElementById('resolveComplaintModal'));
+      modal.show();
+    }
+
+    async function submitComplaintResolution(e) {
+      e.preventDefault();
+      const id = document.getElementById('resolve-complaint-id').value;
+      const status = document.getElementById('resolve-status').value;
+      const resolution = document.getElementById('resolve-notes').value.trim();
+
+      try {
+        await api.patch(`/complaints/${id}/resolve`, { status, resolution });
+        utils.showToast('Grievance updated successfully!', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('resolveComplaintModal')).hide();
+        loadComplaints();
+      } catch (err) {
+        utils.showToast(err.message, 'danger');
+      }
+    }
+  </script>
+</body>
+</html>

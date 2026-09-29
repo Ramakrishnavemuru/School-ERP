@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assignment Details - Student Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <div class="mb-1"><a href="/frontend/student/assignments.html" class="text-decoration-none small">&larr; Back to Assignments</a></div>
+            <h2 class="page-title" id="assignment-title">Assignment Details</h2>
+            <div class="page-subtitle" id="assignment-subject">Subject &amp; Coursework Brief</div>
+          </div>
+          <div>
+            <span class="badge bg-secondary px-3 py-2 fs-6" id="assignment-due">Due Date</span>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <!-- Brief Description & Resource -->
+          <div class="col-lg-7">
+            <div class="card card-custom h-100 p-4">
+              <h5 class="fw-bold mb-3 border-bottom pb-2">Instructions &amp; Problem Statement</h5>
+              <p id="assignment-desc" class="text-secondary" style="white-space: pre-wrap;">Loading...</p>
+              
+              <div id="assignment-attachment" class="mt-4 pt-3 border-top d-none">
+                <span class="fw-bold d-block mb-2">Teacher Attachment:</span>
+                <a id="attachment-link" href="#" target="_blank" class="btn btn-sm btn-outline-primary" download>
+                  📥 Download Assignment Resource
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submission Status & Upload Form -->
+          <div class="col-lg-5">
+            <div class="card card-custom h-100 p-4">
+              <h5 class="fw-bold mb-3 border-bottom pb-2">My Submission</h5>
+              
+              <div id="submission-info" class="mb-4">
+                <p class="text-muted">Loading submission status...</p>
+              </div>
+
+              <form id="details-submit-form" onsubmit="submitWork(event)">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Upload Solution File *</label>
+                  <input type="file" id="solution-file" class="form-control" required>
+                  <div class="form-text">PDF, DOCX, ZIP, or code archive accepted.</div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Submit Work</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    let assignmentId = null;
+
+    if (permissions.enforcePageAccess(['STUDENT'])) {
+      components.renderLayout('Assignment Details');
+      loadAssignmentDetails();
+    }
+
+    async function loadAssignmentDetails() {
+      const params = utils.getQueryParams();
+      assignmentId = params.id;
+      if (!assignmentId) {
+        window.location.href = '/frontend/student/assignments.html';
+        return;
+      }
+
+      try {
+        const list = await api.get('/student/assignments');
+        const a = (list || []).find(item => item.id === parseInt(assignmentId));
+        if (!a) {
+          document.getElementById('assignment-title').textContent = 'Assignment Not Found';
+          return;
+        }
+
+        document.getElementById('assignment-title').textContent = a.title;
+        document.getElementById('assignment-subject').textContent = `${a.subject_name} • Instructor: ${a.teacher_name || 'Faculty'}`;
+        document.getElementById('assignment-due').textContent = `Due: ${utils.formatDateTime(a.due_date)}`;
+        document.getElementById('assignment-desc').textContent = a.description || 'No description provided by teacher.';
+
+        if (a.attachment_path) {
+          const attDiv = document.getElementById('assignment-attachment');
+          const attLink = document.getElementById('attachment-link');
+          attLink.href = `/api/documents/file/${a.attachment_path}?token=${auth.getToken()}`;
+          attDiv.classList.remove('d-none');
+        }
+
+        const subInfo = document.getElementById('submission-info');
+        if (a.submission) {
+          subInfo.innerHTML = `
+            <div class="alert alert-success py-2">
+              <div class="fw-bold">Status: ${utils.getStatusBadge(a.submission.status)}</div>
+              <div class="small">Submitted on: ${utils.formatDateTime(a.submission.submission_date)}</div>
+              ${a.submission.marks_obtained !== null ? `<div class="mt-1 fw-bold text-success">Marks: ${a.submission.marks_obtained} / ${a.max_marks}</div>` : '<div class="small text-muted">Awaiting evaluation</div>'}
+              ${a.submission.feedback ? `<div class="mt-1 small border-top pt-1"><strong>Feedback:</strong> ${a.submission.feedback}</div>` : ''}
+            </div>
+            ${a.submission.file_path ? `<a href="/api/documents/file/${a.submission.file_path}?token=${auth.getToken()}" target="_blank" class="btn btn-sm btn-outline-secondary w-100" download>📥 Download Submitted File</a>` : ''}
+          `;
+        } else {
+          subInfo.innerHTML = '<div class="alert alert-warning py-2 small">You have not submitted this assignment yet.</div>';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function submitWork(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('solution-file');
+      if (!fileInput.files[0] || !assignmentId) return;
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        await api.post(`/assignments/${assignmentId}/submit`, formData);
+        utils.showToast('Work submitted successfully!', 'success');
+        loadAssignmentDetails();
+      } catch (err) {
+        utils.showToast(err.message, 'danger');
+      }
+    }
+  </script>
+</body>
+</html>

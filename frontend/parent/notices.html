@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Notices - Parent Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">School Notices &amp; Announcements</h2>
+            <div class="page-subtitle">Official administrative circulars, holiday notifications, and academic bulletins</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary" onclick="loadNotices()">Refresh</button>
+          </div>
+        </div>
+
+        <div class="row g-3" id="parent-notices-container">
+          <div class="col-12 text-center py-4 text-muted">Loading notices...</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['PARENT'])) {
+      components.renderLayout('School Notices');
+      loadNotices();
+    }
+
+    async function loadNotices() {
+      const container = document.getElementById('parent-notices-container');
+      container.innerHTML = '<div class="col-12 text-center py-4 text-muted">Loading notices...</div>';
+
+      try {
+        const notices = await api.get('/notices');
+        if (!notices || notices.length === 0) {
+          container.innerHTML = '<div class="col-12 text-center py-5 text-muted">No announcements posted for parents at this time.</div>';
+          return;
+        }
+
+        container.innerHTML = notices.map(n => `
+          <div class="col-md-6 mb-3">
+            <div class="card card-custom h-100 p-4">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="fw-bold text-dark mb-0">${n.title}</h5>
+                <span class="badge ${n.target_role === 'ALL' ? 'bg-primary' : 'bg-secondary'}">${n.target_role}</span>
+              </div>
+              <p class="text-secondary small mb-3" style="white-space: pre-wrap;">${n.content}</p>
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top small text-muted">
+                <span>By: <strong>${n.publisher_name || 'Administration'}</strong></span>
+                <span>${utils.formatDate(n.publish_date)}</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = `<div class="col-12 text-danger text-center py-4">${e.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

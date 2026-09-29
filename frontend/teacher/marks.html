@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enter Marks - Teacher Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Enter Examination Marks</h2>
+            <div class="page-subtitle">Input student exam scores, update evaluations, and attach performance remarks</div>
+          </div>
+          <div>
+            <button id="save-marks-btn" class="btn btn-success d-none" onclick="resultsManager.saveMarks()">
+              💾 Save All Marks
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="card card-custom p-4 mb-4">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Examination *</label>
+              <select id="marks-exam" class="form-select" required>
+                <option value="">Select Exam</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Class *</label>
+              <select id="marks-class" class="form-select" required>
+                <option value="">Select Class</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Subject *</label>
+              <select id="marks-subject" class="form-select" required>
+                <option value="">Select Subject</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-primary w-100" onclick="resultsManager.loadStudentsForMarks()">Load Students</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Marks Entry Table -->
+        <div class="card card-custom p-3">
+          <div class="table-custom-wrapper">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">#</th>
+                  <th>Admission No</th>
+                  <th>Student Full Name</th>
+                  <th style="width: 160px;">Marks (Max: 100)</th>
+                  <th>Remarks (Optional)</th>
+                </tr>
+              </thead>
+              <tbody id="marks-entry-tbody">
+                <tr><td colspan="5" class="text-center py-4 text-muted">Select exam, class, and subject, then click "Load Students"</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script src="/frontend/js/results.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['TEACHER', 'ADMIN'])) {
+      components.renderLayout('Enter Marks');
+      resultsManager.initMarksEntry();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Admin Dashboard</h2>
+            <div class="page-subtitle">School and College Overview &amp; Live Statistics</div>
+          </div>
+          <div>
+            <span class="badge bg-primary px-3 py-2 fs-6">Session: 2025-2026</span>
+          </div>
+        </div>
+
+        <!-- Metrics Cards Grid -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total Students</span>
+                <span class="stat-value" id="total-students">0</span>
+                <span class="stat-subtext">Active enrollments</span>
+              </div>
+              <div class="stat-icon primary">🎓</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total Faculty</span>
+                <span class="stat-value" id="total-teachers">0</span>
+                <span class="stat-subtext">Teaching staff</span>
+              </div>
+              <div class="stat-icon success">👨‍🏫</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total Parents</span>
+                <span class="stat-value" id="total-parents">0</span>
+                <span class="stat-subtext">Registered guardians</span>
+              </div>
+              <div class="stat-icon info">👨‍👩‍👧</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Classes</span>
+                <span class="stat-value" id="total-classes">0</span>
+                <span class="stat-subtext">Active grades</span>
+              </div>
+              <div class="stat-icon warning">🏫</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-6">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Fee Collection</span>
+                <span class="stat-value text-success" id="fees-collected">$0.00</span>
+                <span class="stat-subtext">Collected this session</span>
+              </div>
+              <div class="stat-icon success">💳</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-6">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Today's Attendance</span>
+                <span class="stat-value text-primary" id="att-percentage">0%</span>
+                <span class="stat-subtext">School-wide presence</span>
+              </div>
+              <div class="stat-icon primary">📋</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts and Activity Feed -->
+        <div class="row g-3">
+          <div class="col-lg-5 mb-3">
+            <div class="card card-custom h-100">
+              <div class="card-custom-header">
+                <h6 class="card-custom-title">Today's Attendance Breakdown</h6>
+              </div>
+              <div class="card-custom-body d-flex flex-column align-items-center justify-content-center">
+                <div class="chart-container" style="height:240px;">
+                  <canvas id="attendanceChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-7 mb-3">
+            <div class="card card-custom h-100">
+              <div class="card-custom-header">
+                <h6 class="card-custom-title">Recent Announcements</h6>
+                <a href="/frontend/admin/notices.html" class="btn btn-sm btn-link text-decoration-none">View All</a>
+              </div>
+              <div class="card-custom-body">
+                <ul class="activity-list" id="recent-notices-list">
+                  <li class="text-muted small py-3">Loading notices...</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 mb-3">
+            <div class="card card-custom">
+              <div class="card-custom-header">
+                <h6 class="card-custom-title">Audit Trail &amp; Recent Activities</h6>
+                <a href="/frontend/admin/audit-logs.html" class="btn btn-sm btn-link text-decoration-none">Full Audit Log</a>
+              </div>
+              <div class="card-custom-body">
+                <ul class="activity-list" id="recent-activity-list">
+                  <li class="text-muted small py-3">Loading activity stream...</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/chart.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script src="/frontend/js/dashboard.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['ADMIN'])) {
+      components.renderLayout('Admin Dashboard');
+      dashboard.init();
+    }
+  </script>
+</body>
+</html>

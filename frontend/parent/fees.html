@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fee Payments - Parent Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Child Fee Ledger &amp; Payments</h2>
+            <div class="page-subtitle">Tuition schedules, cleared payments, and pending dues for your children</div>
+          </div>
+          <div>
+            <select id="child-select" class="form-select" onchange="loadChildFees()">
+              <option value="">Select Child</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-md-4">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total Assigned Tuition</span>
+                <span class="stat-value text-dark" id="fee-total">$0.00</span>
+                <span class="stat-subtext">Total academic dues</span>
+              </div>
+              <div class="stat-icon info">💳</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-4">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Cleared Payments</span>
+                <span class="stat-value text-success" id="fee-paid">$0.00</span>
+                <span class="stat-subtext">Deposited tuition</span>
+              </div>
+              <div class="stat-icon success">✅</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-4">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Outstanding Balance</span>
+                <span class="stat-value text-danger" id="fee-balance">$0.00</span>
+                <span class="stat-subtext">Remaining balance due</span>
+              </div>
+              <div class="stat-icon warning">⚠️</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fee Items Table -->
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Fee Structure Title</th>
+                <th>Category</th>
+                <th>Total Fee</th>
+                <th>Paid Amount</th>
+                <th>Remaining Due</th>
+                <th>Payment Status</th>
+              </tr>
+            </thead>
+            <tbody id="child-fees-tbody">
+              <tr><td colspan="6" class="text-center py-4 text-muted">Select a child to view fee ledger...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['PARENT'])) {
+      components.renderLayout('Fee Payments');
+      initPage();
+    }
+
+    async function initPage() {
+      try {
+        const children = await api.get('/parent/children');
+        const sel = document.getElementById('child-select');
+        if (!children || children.length === 0) {
+          sel.innerHTML = '<option value="">No linked children</option>';
+          return;
+        }
+
+        const params = utils.getQueryParams();
+        const activeId = params.child_id ? parseInt(params.child_id) : children[0].id;
+
+        sel.innerHTML = children.map(c => `
+          <option value="${c.id}" ${c.id === activeId ? 'selected' : ''}>${c.name} (${c.class_name})</option>
+        `).join('');
+
+        loadChildFees();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadChildFees() {
+      const childId = document.getElementById('child-select').value;
+      if (!childId) return;
+
+      const tbody = document.getElementById('child-fees-tbody');
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Loading fee ledger...</td></tr>';
+
+      try {
+        const data = await api.get(`/parent/child/${childId}/fees`);
+        if (data) {
+          document.getElementById('fee-total').textContent = utils.formatCurrency(data.total_fees || 0);
+          document.getElementById('fee-paid').textContent = utils.formatCurrency(data.total_paid || 0);
+          document.getElementById('fee-balance').textContent = utils.formatCurrency(data.remaining_balance || 0);
+        }
+
+        if (!data.items || data.items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="table-empty-state">No fee dues configured for this child.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.items.map(item => `
+          <tr>
+            <td><strong>${item.title}</strong></td>
+            <td><span class="badge bg-secondary">${item.fee_type}</span></td>
+            <td>${utils.formatCurrency(item.total_amount)}</td>
+            <td class="text-success fw-bold">${utils.formatCurrency(item.amount_paid)}</td>
+            <td class="text-danger fw-bold">${utils.formatCurrency(item.balance)}</td>
+            <td>${utils.getStatusBadge(item.status)}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-danger py-4 text-center">${e.message}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

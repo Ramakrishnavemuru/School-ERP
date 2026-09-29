@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Documents - Student Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Personal Documents &amp; Certificates</h2>
+            <div class="page-subtitle">Upload and access official records, identification proofs, and transcripts</div>
+          </div>
+          <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+              + Upload Document
+            </button>
+          </div>
+        </div>
+
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Document Title</th>
+                <th>Category</th>
+                <th>Upload Date</th>
+                <th>File Size</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="student-docs-tbody">
+              <tr><td colspan="5" class="text-center py-4 text-muted">Loading documents...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Upload Modal -->
+        <div class="modal fade" id="uploadDocModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <form id="upload-doc-form" onsubmit="uploadDoc(event)">
+                <div class="modal-header">
+                  <h5 class="modal-title fw-bold">Upload Student Document</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label">Document Title *</label>
+                    <input type="text" name="title" class="form-control" required placeholder="e.g. Birth Certificate or Vaccination Slip">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Document Category *</label>
+                    <select name="document_type" class="form-select" required>
+                      <option value="Identification">Identification (ID / Passport)</option>
+                      <option value="Certificate">Certificate / Award</option>
+                      <option value="Medical">Medical Slip / Record</option>
+                      <option value="Academic">Previous Academic Transcript</option>
+                      <option value="General">Other / General</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">File Attachment (PDF, JPG, PNG, DOCX) *</label>
+                    <input type="file" name="file" class="form-control" required>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Upload File</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['STUDENT'])) {
+      components.renderLayout('Documents');
+      loadDocuments();
+    }
+
+    async function loadDocuments() {
+      const tbody = document.getElementById('student-docs-tbody');
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Loading documents...</td></tr>';
+
+      try {
+        const docs = await api.get('/documents');
+        if (!docs || docs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="table-empty-state">No documents uploaded yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = docs.map(d => `
+          <tr>
+            <td><strong>${d.title}</strong></td>
+            <td><span class="badge bg-secondary">${d.document_type}</span></td>
+            <td>${utils.formatDate(d.created_at)}</td>
+            <td>${d.file_size ? `${(d.file_size / 1024).toFixed(1)} KB` : '—'}</td>
+            <td>
+              <div class="table-actions">
+                <a href="/api/documents/file/${d.file_path}?token=${auth.getToken()}" target="_blank" class="table-action-btn" download>📥 Download</a>
+                <button class="table-action-btn text-danger ms-2" onclick="deleteDoc(${d.id})">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-danger py-4 text-center">${e.message}</td></tr>`;
+      }
+    }
+
+    async function uploadDoc(e) {
+      e.preventDefault();
+      const form = document.getElementById('upload-doc-form');
+      const formData = new FormData(form);
+
+      try {
+        await api.post('/documents', formData);
+        utils.showToast('Document uploaded successfully!', 'success');
+        form.reset();
+        bootstrap.Modal.getInstance(document.getElementById('uploadDocModal')).hide();
+        loadDocuments();
+      } catch (err) {
+        utils.showToast(err.message, 'danger');
+      }
+    }
+
+    async function deleteDoc(id) {
+      if (!confirm('Are you sure you want to delete this document?')) return;
+      try {
+        await api.delete(`/documents/${id}`);
+        utils.showToast('Document deleted', 'success');
+        loadDocuments();
+      } catch (e) {
+        utils.showToast(e.message, 'danger');
+      }
+    }
+  </script>
+</body>
+</html>

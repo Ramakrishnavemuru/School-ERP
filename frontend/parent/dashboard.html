@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parent Dashboard - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title" id="parent-welcome-title">Parent Guardian Portal</h2>
+            <div class="page-subtitle">Track your children's school progress, attendance records, and tuition payments</div>
+          </div>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Linked Children</span>
+                <span class="stat-value" id="stat-children-count">0</span>
+                <span class="stat-subtext">Students registered</span>
+              </div>
+              <div class="stat-icon primary">👨‍👧‍👦</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Average Attendance</span>
+                <span class="stat-value text-success" id="stat-att-rate">0%</span>
+                <span class="stat-subtext">Presence compliance</span>
+              </div>
+              <div class="stat-icon success">📋</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Pending Dues</span>
+                <span class="stat-value text-danger" id="stat-fee-due">$0.00</span>
+                <span class="stat-subtext">Outstanding balance</span>
+              </div>
+              <div class="stat-icon warning">💳</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-lg-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Recent Notices</span>
+                <span class="stat-value text-primary" id="stat-notices-count">0</span>
+                <span class="stat-subtext">School broadcasts</span>
+              </div>
+              <div class="stat-icon info">📢</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Children Profiles Overview -->
+        <h5 class="fw-bold mb-3">My Enrolled Children</h5>
+        <div class="row g-3 mb-4" id="children-cards-row">
+          <div class="col-12 text-center py-4 text-muted">Loading children details...</div>
+        </div>
+
+        <!-- Latest Notices & Announcements -->
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="card card-custom p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Official Parent Circulars &amp; Notices</h5>
+                <a href="/frontend/parent/notices.html" class="btn btn-sm btn-link text-decoration-none">View All</a>
+              </div>
+              <ul class="activity-list" id="parent-dash-notices-list">
+                <li class="text-muted small py-2">Loading announcements...</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['PARENT'])) {
+      components.renderLayout('Parent Dashboard');
+      loadParentDashboard();
+    }
+
+    async function loadParentDashboard() {
+      try {
+        const [children, notices] = await Promise.all([
+          api.get('/parent/children'),
+          api.get('/notices')
+        ]);
+
+        document.getElementById('stat-children-count').textContent = (children || []).length;
+        document.getElementById('stat-notices-count').textContent = (notices || []).length;
+
+        const cardsRow = document.getElementById('children-cards-row');
+        if (!children || children.length === 0) {
+          cardsRow.innerHTML = '<div class="col-12 text-center py-4 text-muted">No children currently linked to your guardian account. Contact the school administrator to link your child.</div>';
+        } else {
+          // Render each child card
+          let totalBalance = 0;
+          let totalAttRate = 0;
+
+          const childCardsHtml = await Promise.all(children.map(async c => {
+            const [att, fees] = await Promise.all([
+              api.get(`/parent/child/${c.id}/attendance`),
+              api.get(`/parent/child/${c.id}/fees`)
+            ]);
+
+            const attPct = att && att.stats ? att.stats.percentage : 0;
+            const bal = fees ? fees.remaining_balance : 0;
+            totalBalance += bal;
+            totalAttRate += attPct;
+
+            return `
+              <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card card-custom h-100 p-3">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <h5 class="fw-bold mb-0 text-dark">${c.name}</h5>
+                      <span class="text-muted small">Adm: ${c.admission_number} &bull; Roll: ${c.roll_number || '—'}</span>
+                    </div>
+                    <span class="badge bg-primary">${c.class_name} ${c.section_name ? `(${c.section_name})` : ''}</span>
+                  </div>
+
+                  <div class="my-3 p-2 bg-light rounded d-flex justify-content-around text-center">
+                    <div>
+                      <span class="text-muted small d-block">Attendance</span>
+                      <strong class="text-success">${attPct}%</strong>
+                    </div>
+                    <div class="border-start ps-3">
+                      <span class="text-muted small d-block">Fee Balance</span>
+                      <strong class="${bal > 0 ? 'text-danger' : 'text-success'}">${utils.formatCurrency(bal)}</strong>
+                    </div>
+                  </div>
+
+                  <div class="pt-2 border-top mt-auto d-flex gap-2">
+                    <a href="/frontend/parent/child-profile.html?child_id=${c.id}" class="btn btn-sm btn-outline-primary flex-fill">Profile</a>
+                    <a href="/frontend/parent/results.html?child_id=${c.id}" class="btn btn-sm btn-outline-secondary flex-fill">Results</a>
+                    <a href="/frontend/parent/fees.html?child_id=${c.id}" class="btn btn-sm btn-outline-success flex-fill">Fees</a>
+                  </div>
+                </div>
+              </div>
+            `;
+          }));
+
+          cardsRow.innerHTML = childCardsHtml.join('');
+
+          document.getElementById('stat-fee-due').textContent = utils.formatCurrency(totalBalance);
+          const avgAtt = children.length > 0 ? (totalAttRate / children.length).toFixed(1) : 0;
+          document.getElementById('stat-att-rate').textContent = `${avgAtt}%`;
+        }
+
+        // Render notices
+        const noticesList = document.getElementById('parent-dash-notices-list');
+        if (noticesList) {
+          if (!notices || notices.length === 0) {
+            noticesList.innerHTML = '<li class="text-muted small py-3">No announcements at this time.</li>';
+          } else {
+            noticesList.innerHTML = notices.slice(0, 4).map(n => `
+              <li class="activity-item">
+                <span class="activity-dot bg-primary"></span>
+                <div class="activity-content">
+                  <div class="fw-bold text-dark">${n.title}</div>
+                  <div class="text-secondary small mb-1">${n.content}</div>
+                  <div class="text-muted small">${utils.formatDate(n.publish_date)}</div>
+                </div>
+              </li>
+            `).join('');
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>

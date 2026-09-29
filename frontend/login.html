@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .login-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 440px;
+      overflow: hidden;
+    }
+    .demo-pill {
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 0.25rem 0.65rem;
+      background: #f8fafc;
+      color: #334155;
+    }
+    .demo-pill:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-card p-4 p-sm-5">
+    <div class="text-center mb-4">
+      <div style="font-size: 2.5rem;">🎓</div>
+      <h3 class="fw-bold text-dark mt-2 mb-1">School/College ERP</h3>
+      <p class="text-secondary small">Sign in to access your role portal</p>
+    </div>
+
+    <div id="login-alert" class="alert alert-danger d-none py-2 px-3 small" role="alert"></div>
+
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="mb-3">
+        <label for="username" class="form-label">Username or Email</label>
+        <input type="text" class="form-control" id="username" required autofocus placeholder="Enter your username">
+      </div>
+
+      <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <label for="password" class="form-label">Password</label>
+          <a href="/frontend/forgot-password.html" class="small text-muted">Forgot password?</a>
+        </div>
+        <input type="password" class="form-control" id="password" required placeholder="Enter password">
+      </div>
+
+      <button type="submit" id="login-btn" class="btn btn-primary w-100 py-2 fw-semibold mt-2">
+        Sign In
+      </button>
+    </form>
+
+    <!-- Demo Credentials Quick Selector -->
+    <div class="mt-4 pt-3 border-top">
+      <div class="text-muted small text-center mb-2 fw-semibold">Quick Demo Login:</div>
+      <div class="d-flex flex-wrap justify-content-center gap-1">
+        <span class="demo-pill" onclick="fillDemo('admin')">Admin</span>
+        <span class="demo-pill" onclick="fillDemo('principal')">Principal</span>
+        <span class="demo-pill" onclick="fillDemo('teacher')">Teacher</span>
+        <span class="demo-pill" onclick="fillDemo('student')">Student</span>
+        <span class="demo-pill" onclick="fillDemo('parent')">Parent</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script>
+    // If already logged in, redirect directly to dashboard
+    if (auth.isAuthenticated()) {
+      auth.redirectBasedOnRole(auth.getRole());
+    }
+
+    const params = utils.getQueryParams();
+    if (params.expired) {
+      const alertEl = document.getElementById('login-alert');
+      alertEl.textContent = 'Your session has expired. Please sign in again.';
+      alertEl.classList.remove('d-none');
+    }
+
+    function fillDemo(role) {
+      document.getElementById('username').value = role;
+      document.getElementById('password').value = 'Password123!';
+      document.getElementById('login-form').requestSubmit();
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const alertEl = document.getElementById('login-alert');
+      alertEl.classList.add('d-none');
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const user = await auth.login(username, password);
+        auth.redirectBasedOnRole(user.role);
+      } catch (err) {
+        alertEl.textContent = err.message || 'Login failed. Please verify credentials.';
+        alertEl.classList.remove('d-none');
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    }
+  </script>
+</body>
+</html>

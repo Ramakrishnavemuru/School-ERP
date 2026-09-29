@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Child Exam Results - Parent Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Child Report Cards &amp; Results</h2>
+            <div class="page-subtitle">Published examination scores, percentage calculations, and academic evaluation grades</div>
+          </div>
+          <div>
+            <select id="child-select" class="form-select" onchange="loadChildResults()">
+              <option value="">Select Child</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Exam Name</th>
+                <th>Subject</th>
+                <th>Marks Obtained</th>
+                <th>Max Marks</th>
+                <th>Percentage</th>
+                <th>Grade</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="child-results-tbody">
+              <tr><td colspan="7" class="text-center py-4 text-muted">Select a child to view results...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['PARENT'])) {
+      components.renderLayout('Exam Results');
+      initPage();
+    }
+
+    async function initPage() {
+      try {
+        const children = await api.get('/parent/children');
+        const sel = document.getElementById('child-select');
+        if (!children || children.length === 0) {
+          sel.innerHTML = '<option value="">No linked children</option>';
+          return;
+        }
+
+        const params = utils.getQueryParams();
+        const activeId = params.child_id ? parseInt(params.child_id) : children[0].id;
+
+        sel.innerHTML = children.map(c => `
+          <option value="${c.id}" ${c.id === activeId ? 'selected' : ''}>${c.name} (${c.class_name})</option>
+        `).join('');
+
+        loadChildResults();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadChildResults() {
+      const childId = document.getElementById('child-select').value;
+      if (!childId) return;
+
+      const tbody = document.getElementById('child-results-tbody');
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Loading exam results...</td></tr>';
+
+      try {
+        const results = await api.get(`/parent/child/${childId}/results`);
+        if (!results || results.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="table-empty-state">No published examination results found for this student.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = results.map(r => `
+          <tr>
+            <td><strong>${r.exam_name}</strong></td>
+            <td>${r.subject_name}</td>
+            <td>${r.marks_obtained}</td>
+            <td>${r.max_marks}</td>
+            <td><strong>${r.percentage}%</strong></td>
+            <td>${utils.getGradeBadge(r.grade)}</td>
+            <td>${r.remarks || '—'}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-danger py-4 text-center">${e.message}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

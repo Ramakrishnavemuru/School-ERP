@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar Events - Parent Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Institution Calendar Events</h2>
+            <div class="page-subtitle">Parent-teacher meetings, sports days, cultural exhibitions, and school holidays</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary" onclick="loadEvents()">Refresh Calendar</button>
+          </div>
+        </div>
+
+        <div class="row g-3" id="parent-events-container">
+          <div class="col-12 text-center py-4 text-muted">Loading events...</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['PARENT'])) {
+      components.renderLayout('Calendar Events');
+      loadEvents();
+    }
+
+    async function loadEvents() {
+      const container = document.getElementById('parent-events-container');
+      container.innerHTML = '<div class="col-12 text-center py-4 text-muted">Loading events...</div>';
+
+      try {
+        const events = await api.get('/events');
+        if (!events || events.length === 0) {
+          container.innerHTML = '<div class="col-12 text-center py-5 text-muted">No scheduled parent events at this time.</div>';
+          return;
+        }
+
+        container.innerHTML = events.map(e => `
+          <div class="col-md-6 mb-3">
+            <div class="card card-custom h-100 p-4">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="fw-bold text-dark mb-0">${e.title}</h5>
+                <span class="badge bg-primary">🎉 Event</span>
+              </div>
+              <p class="text-secondary small mb-3">${e.description || 'No description provided.'}</p>
+              <div class="small text-muted mb-2">
+                📍 Location: <strong>${e.location || 'Campus'}</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top small text-muted">
+                <span>Start: <strong>${utils.formatDateTime(e.start_time)}</strong></span>
+                <span>End: <strong>${utils.formatDateTime(e.end_time)}</strong></span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = `<div class="col-12 text-danger text-center py-4">${err.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

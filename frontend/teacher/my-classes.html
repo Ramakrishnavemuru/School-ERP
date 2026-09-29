@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Classes - Teacher Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">My Assigned Classes</h2>
+            <div class="page-subtitle">Classes, sections, and curriculum subjects assigned to you for instruction</div>
+          </div>
+        </div>
+
+        <div id="classes-list-container" class="row g-3">
+          <div class="col-12 text-center py-4 text-muted">Loading assigned classes...</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['TEACHER'])) {
+      components.renderLayout('My Classes');
+      loadMyClasses();
+    }
+
+    async function loadMyClasses() {
+      const container = document.getElementById('classes-list-container');
+      try {
+        const classes = await api.get('/teacher/classes');
+        if (!classes || classes.length === 0) {
+          container.innerHTML = '<div class="col-12 text-center py-5 text-muted">No classes currently assigned to you.</div>';
+          return;
+        }
+
+        container.innerHTML = classes.map(c => `
+          <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card card-custom h-100 p-4">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h4 class="fw-bold text-dark mb-0">${c.name}</h4>
+                <span class="badge bg-primary">Grade ${c.grade_level}</span>
+              </div>
+              
+              <div class="mb-3">
+                <span class="text-muted small d-block mb-1">Sections:</span>
+                <div>
+                  ${(c.sections || []).map(s => `<span class="badge bg-light text-dark border me-1">${s.name}</span>`).join('') || '<span class="text-muted small">No sections</span>'}
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <span class="text-muted small d-block mb-1">Your Subjects in this Class:</span>
+                <ul class="list-unstyled mb-0">
+                  ${(c.subjects || []).map(subj => `
+                    <li class="small fw-semibold text-secondary">📚 ${subj.name} (${subj.code})</li>
+                  `).join('') || '<li class="small text-muted">Class Teacher / General</li>'}
+                </ul>
+              </div>
+
+              <div class="pt-3 border-top mt-auto d-flex gap-2">
+                <a href="/frontend/teacher/students.html?class_id=${c.id}" class="btn btn-sm btn-outline-primary flex-fill">View Students</a>
+                <a href="/frontend/teacher/attendance.html?class_id=${c.id}" class="btn btn-sm btn-outline-success flex-fill">Attendance</a>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = `<div class="col-12 text-danger text-center py-4">${e.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

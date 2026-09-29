@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Examination Schedule - Student Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Upcoming Examination Schedule</h2>
+            <div class="page-subtitle">Academic assessment schedules, unit tests, and semester timetables</div>
+          </div>
+          <div>
+            <a href="/frontend/student/results.html" class="btn btn-primary">🏆 View Published Results</a>
+          </div>
+        </div>
+
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Exam Name</th>
+                <th>Assessment Type</th>
+                <th>Applicable Class</th>
+                <th>Date Window</th>
+                <th>Results Status</th>
+              </tr>
+            </thead>
+            <tbody id="student-exams-tbody">
+              <tr><td colspan="5" class="text-center py-4 text-muted">Loading exam schedule...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['STUDENT'])) {
+      components.renderLayout('Exams');
+      loadExams();
+    }
+
+    async function loadExams() {
+      const tbody = document.getElementById('student-exams-tbody');
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Loading exam schedule...</td></tr>';
+
+      try {
+        const exams = await api.get('/exams');
+        if (!exams || exams.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="table-empty-state">No scheduled examinations at this time.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = exams.map(e => `
+          <tr>
+            <td><strong>${e.name}</strong></td>
+            <td><span class="badge bg-secondary">${e.exam_type}</span></td>
+            <td>${e.class_name || 'All Classes'}</td>
+            <td>${utils.formatDate(e.start_date)} &rarr; ${utils.formatDate(e.end_date)}</td>
+            <td>${e.is_published ? '<span class="badge bg-success">Results Published</span>' : '<span class="badge bg-secondary">Upcoming</span>'}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-danger py-4 text-center">${e.message}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

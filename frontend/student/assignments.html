@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Assignments - Student Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Class Assignments &amp; Homework</h2>
+            <div class="page-subtitle">View assigned coursework, track deadlines, submit documents, and check grades</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary" onclick="assignmentsManager.loadStudentAssignments()">Refresh Tasks</button>
+          </div>
+        </div>
+
+        <div class="row g-3" id="student-assignments-list">
+          <div class="col-12 text-center py-4 text-muted">Loading assignments...</div>
+        </div>
+
+        <!-- Submit Assignment Modal -->
+        <div class="modal fade" id="submitModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <form id="submit-form" onsubmit="assignmentsManager.submitAssignment(event)">
+                <input type="hidden" id="submit-assignment-id">
+                <div class="modal-header">
+                  <h5 class="modal-title fw-bold">Submit Assignment Work</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <h6 id="submit-assignment-title" class="fw-bold mb-3 text-dark"></h6>
+                  <div class="mb-3">
+                    <label class="form-label">Upload Completed Work (PDF, DOCX, ZIP, etc.) *</label>
+                    <input type="file" id="submission-file" class="form-control" required>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Upload &amp; Submit</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script src="/frontend/js/assignments.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['STUDENT'])) {
+      components.renderLayout('Assignments');
+      assignmentsManager.loadStudentAssignments();
+    }
+  </script>
+</body>
+</html>

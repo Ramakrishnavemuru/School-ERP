@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assignments - Teacher Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Class Assignments &amp; Coursework</h2>
+            <div class="page-subtitle">Create coursework, set deadlines, attach documents, and view student submissions</div>
+          </div>
+          <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAssignmentModal">
+              + Create Assignment
+            </button>
+          </div>
+        </div>
+
+        <!-- Assignments Grid -->
+        <div class="row g-3" id="teacher-assignments-list">
+          <div class="col-12 text-center py-4 text-muted">Loading assignments...</div>
+        </div>
+
+        <!-- Create Assignment Modal -->
+        <div class="modal fade" id="createAssignmentModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <form id="create-assignment-form" onsubmit="assignmentsManager.createAssignment(event)">
+                <div class="modal-header">
+                  <h5 class="modal-title fw-bold">Create New Assignment</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label">Assignment Title *</label>
+                    <input type="text" name="title" class="form-control" required placeholder="e.g. Thermodynamics Lab Report 1">
+                  </div>
+                  <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Target Class *</label>
+                      <select name="class_id" id="assignment-class" class="form-select" required>
+                        <option value="">Select Class</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Subject *</label>
+                      <select name="subject_id" id="assignment-subject" class="form-select" required>
+                        <option value="">Select Subject</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Due Date &amp; Time *</label>
+                      <input type="datetime-local" name="due_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Maximum Marks *</label>
+                      <input type="number" step="0.5" name="max_marks" class="form-control" required value="100.0">
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Assignment Brief &amp; Instructions</label>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Provide assignment requirements..."></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Attach Resource / Problem Sheet (Optional)</label>
+                    <input type="file" name="file" class="form-control">
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Publish Assignment</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script src="/frontend/js/assignments.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['TEACHER'])) {
+      components.renderLayout('Assignments');
+      assignmentsManager.initTeacher();
+    }
+  </script>
+</body>
+</html>

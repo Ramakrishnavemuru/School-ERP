@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Attendance - Student Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Attendance Record</h2>
+            <div class="page-subtitle">Your personal classroom presence history, percentage statistics, and daily status</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary" onclick="attendanceManager.loadStudentAttendanceHistory()">Refresh</button>
+          </div>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Attendance Rate</span>
+                <span class="stat-value text-success" id="att-pct">0%</span>
+                <span class="stat-subtext">Overall compliance</span>
+              </div>
+              <div class="stat-icon success">📈</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total School Days</span>
+                <span class="stat-value" id="att-total-days">0</span>
+                <span class="stat-subtext">Session days</span>
+              </div>
+              <div class="stat-icon primary">📅</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Days Present</span>
+                <span class="stat-value text-success" id="att-present-days">0</span>
+                <span class="stat-subtext">Attended</span>
+              </div>
+              <div class="stat-icon success">✓</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Days Absent</span>
+                <span class="stat-value text-danger" id="att-absent-days">0</span>
+                <span class="stat-subtext" id="att-late-info">Days absent</span>
+              </div>
+              <div class="stat-icon warning">✗</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Remarks / Notes</th>
+              </tr>
+            </thead>
+            <tbody id="student-attendance-tbody">
+              <tr><td colspan="3" class="text-center py-4 text-muted">Loading attendance log...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script src="/frontend/js/attendance.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['STUDENT'])) {
+      components.renderLayout('Attendance');
+      attendanceManager.loadStudentAttendanceHistory();
+    }
+  </script>
+</body>
+</html>

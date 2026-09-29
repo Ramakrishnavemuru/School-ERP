@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Settings - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">System Settings</h2>
+            <div class="page-subtitle">Configure application environment parameters, security, and administrative credentials</div>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <!-- Environment & System Parameters -->
+          <div class="col-lg-6">
+            <div class="card card-custom h-100 p-4">
+              <h5 class="fw-bold mb-3 border-bottom pb-2">ERP System Configuration</h5>
+              <div class="mb-3">
+                <label class="form-label text-muted small">Application Name</label>
+                <input type="text" id="setting-project-name" class="form-control" readonly>
+              </div>
+              <div class="mb-3">
+                <label class="form-label text-muted small">Maximum File Upload Limit (MB)</label>
+                <input type="text" id="setting-max-upload" class="form-control" readonly>
+              </div>
+              <div class="mb-3">
+                <label class="form-label text-muted small">Session JWT Expiry (Minutes)</label>
+                <input type="text" id="setting-token-expire" class="form-control" readonly>
+              </div>
+              <div class="mb-3">
+                <label class="form-label text-muted small">Permitted Document File Types</label>
+                <input type="text" id="setting-extensions" class="form-control" readonly>
+              </div>
+              <div class="alert alert-info py-2 small mb-0">
+                System parameters are governed by backend environment specifications.
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Credentials -->
+          <div class="col-lg-6">
+            <div class="card card-custom h-100 p-4">
+              <h5 class="fw-bold mb-3 border-bottom pb-2">Change Admin Password</h5>
+              <form id="change-password-form" onsubmit="handleChangePassword(event)">
+                <div class="mb-3">
+                  <label class="form-label">Current Password *</label>
+                  <input type="password" name="old_password" class="form-control" required placeholder="Enter current password">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">New Password *</label>
+                  <input type="password" name="new_password" class="form-control" required minlength="6" placeholder="Minimum 6 characters">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Confirm New Password *</label>
+                  <input type="password" name="confirm_password" class="form-control" required minlength="6" placeholder="Re-enter new password">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Update Password</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['ADMIN'])) {
+      components.renderLayout('System Settings');
+      loadSettings();
+    }
+
+    async function loadSettings() {
+      try {
+        const data = await api.get('/admin/settings');
+        document.getElementById('setting-project-name').value = data.project_name || 'School/College ERP';
+        document.getElementById('setting-max-upload').value = `${data.max_upload_size_mb || 10} MB`;
+        document.getElementById('setting-token-expire').value = `${data.token_expire_minutes || 1440} Minutes`;
+        document.getElementById('setting-extensions').value = (data.allowed_extensions || []).join(', ');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function handleChangePassword(e) {
+      e.preventDefault();
+      const form = document.getElementById('change-password-form');
+      const oldPassword = form.old_password.value;
+      const newPassword = form.new_password.value;
+      const confirmPassword = form.confirm_password.value;
+
+      if (newPassword !== confirmPassword) {
+        utils.showToast('New passwords do not match!', 'warning');
+        return;
+      }
+
+      try {
+        await api.post('/auth/change-password', {
+          old_password: oldPassword,
+          new_password: newPassword
+        });
+        utils.showToast('Password updated successfully!', 'success');
+        form.reset();
+      } catch (err) {
+        utils.showToast(err.message, 'danger');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fees &amp; Dues - Student Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content" id="student-fees-container">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Tuition &amp; Term Fees</h2>
+            <div class="page-subtitle">Summary of institutional fee dues, payment history, and outstanding balances</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary" onclick="feesManager.loadStudentFees()">Refresh Ledger</button>
+          </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-md-4">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total Assigned Fees</span>
+                <span class="stat-value text-dark" id="fee-summary-total">$0.00</span>
+                <span class="stat-subtext">Cumulative tuition &amp; dues</span>
+              </div>
+              <div class="stat-icon info">💳</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-4">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total Amount Paid</span>
+                <span class="stat-value text-success" id="fee-summary-paid">$0.00</span>
+                <span class="stat-subtext">Cleared receipts</span>
+              </div>
+              <div class="stat-icon success">✅</div>
+            </div>
+          </div>
+
+          <div class="col-sm-6 col-md-4">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Outstanding Balance</span>
+                <span class="stat-value text-danger" id="fee-summary-balance">$0.00</span>
+                <span class="stat-subtext">Pending payment</span>
+              </div>
+              <div class="stat-icon warning">⚠️</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fees Ledger Table -->
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Fee Item</th>
+                <th>Category</th>
+                <th>Total Fee</th>
+                <th>Paid Amount</th>
+                <th>Outstanding Balance</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="student-fees-tbody">
+              <tr><td colspan="6" class="text-center py-4 text-muted">Loading fee records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script src="/frontend/js/fees.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['STUDENT'])) {
+      components.renderLayout('Fees & Dues');
+      feesManager.loadStudentFees();
+    }
+  </script>
+</body>
+</html>

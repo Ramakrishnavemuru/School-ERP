@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Materials - Student Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Class Study Materials &amp; Notes</h2>
+            <div class="page-subtitle">Download lecture notes, reading materials, and curriculum handouts shared by your teachers</div>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary" onclick="loadMaterials()">Refresh</button>
+          </div>
+        </div>
+
+        <div class="row g-3" id="materials-container">
+          <div class="col-12 text-center py-4 text-muted">Loading study materials...</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['STUDENT'])) {
+      components.renderLayout('Study Materials');
+      loadMaterials();
+    }
+
+    async function loadMaterials() {
+      const container = document.getElementById('materials-container');
+      container.innerHTML = '<div class="col-12 text-center py-4 text-muted">Loading study materials...</div>';
+
+      try {
+        const list = await api.get('/student/study-materials');
+        if (!list || list.length === 0) {
+          container.innerHTML = '<div class="col-12 text-center py-5 text-muted">No study materials shared for your class yet.</div>';
+          return;
+        }
+
+        container.innerHTML = list.map(m => `
+          <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card card-custom h-100 p-3">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="fw-bold text-dark mb-0">${m.title}</h5>
+                <span class="badge bg-secondary font-monospace">${(m.file_type || 'DOC').toUpperCase()}</span>
+              </div>
+              <p class="text-secondary small mb-3">${m.description || 'No description provided.'}</p>
+              <div class="small text-muted mb-3">
+                Subject: <strong>${m.subject_name || 'Subject'}</strong> &bull; Teacher: <strong>${m.teacher_name || 'Faculty'}</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-auto">
+                <span class="text-muted small">${utils.formatDate(m.upload_date)}</span>
+                <a href="/api/documents/file/${m.file_path}?token=${auth.getToken()}" target="_blank" class="btn btn-sm btn-outline-primary" download>
+                  📥 Download
+                </a>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = `<div class="col-12 text-danger text-center py-4">${e.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

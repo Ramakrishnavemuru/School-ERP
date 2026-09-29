@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Children - Parent Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Linked Children Directory</h2>
+            <div class="page-subtitle">Roster of students officially associated with your parent/guardian account</div>
+          </div>
+        </div>
+
+        <div class="row g-3" id="children-directory-container">
+          <div class="col-12 text-center py-4 text-muted">Loading children records...</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['PARENT'])) {
+      components.renderLayout('My Children');
+      loadChildren();
+    }
+
+    async function loadChildren() {
+      const container = document.getElementById('children-directory-container');
+      try {
+        const children = await api.get('/parent/children');
+        if (!children || children.length === 0) {
+          container.innerHTML = '<div class="col-12 text-center py-5 text-muted">No children are currently linked to your account.</div>';
+          return;
+        }
+
+        container.innerHTML = children.map(c => `
+          <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card card-custom h-100 p-4">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                  <h4 class="fw-bold text-dark mb-0">${c.name}</h4>
+                  <div class="text-muted small">Admission: <strong>${c.admission_number}</strong></div>
+                </div>
+                <span class="badge bg-primary">${c.class_name} ${c.section_name ? `(${c.section_name})` : ''}</span>
+              </div>
+
+              <div class="mb-3">
+                <span class="text-muted small">Roll Number:</span> <strong>${c.roll_number || '—'}</strong>
+              </div>
+
+              <div class="pt-3 border-top mt-auto d-grid gap-2">
+                <a href="/frontend/parent/child-profile.html?child_id=${c.id}" class="btn btn-outline-primary">View Full Profile</a>
+                <div class="btn-group w-100">
+                  <a href="/frontend/parent/attendance.html?child_id=${c.id}" class="btn btn-sm btn-outline-secondary">Attendance</a>
+                  <a href="/frontend/parent/assignments.html?child_id=${c.id}" class="btn btn-sm btn-outline-secondary">Assignments</a>
+                  <a href="/frontend/parent/results.html?child_id=${c.id}" class="btn btn-sm btn-outline-secondary">Results</a>
+                  <a href="/frontend/parent/fees.html?child_id=${c.id}" class="btn btn-sm btn-outline-secondary">Fees</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = `<div class="col-12 text-danger text-center py-4">${e.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

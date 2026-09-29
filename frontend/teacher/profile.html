@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Profile - Teacher Portal</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title" id="prof-name">Faculty Profile</h2>
+            <div class="page-subtitle" id="prof-subtitle">Institutional profile credentials and account security</div>
+          </div>
+          <div>
+            <span class="badge bg-primary px-3 py-2 fs-6" id="prof-empid">EMP</span>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <!-- Profile Details Card -->
+          <div class="col-lg-7">
+            <div class="card card-custom h-100 p-4">
+              <h5 class="fw-bold mb-3 border-bottom pb-2">Academic &amp; Employment Information</h5>
+              <table class="table table-borderless">
+                <tbody>
+                  <tr>
+                    <th class="text-muted w-35">Department:</th>
+                    <td id="prof-dept" class="fw-bold">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Designation:</th>
+                    <td id="prof-designation">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Qualification:</th>
+                    <td id="prof-qual">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Date of Joining:</th>
+                    <td id="prof-joining">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Official Email:</th>
+                    <td id="prof-email">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Contact Phone:</th>
+                    <td id="prof-phone">—</td>
+                  </tr>
+                  <tr>
+                    <th class="text-muted">Residential Address:</th>
+                    <td id="prof-address">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Security Credentials Card -->
+          <div class="col-lg-5">
+            <div class="card card-custom h-100 p-4">
+              <h5 class="fw-bold mb-3 border-bottom pb-2">Update Account Password</h5>
+              <form id="change-password-form" onsubmit="changePassword(event)">
+                <div class="mb-3">
+                  <label class="form-label">Current Password *</label>
+                  <input type="password" name="old_password" class="form-control" required placeholder="Enter current password">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">New Password *</label>
+                  <input type="password" name="new_password" class="form-control" required minlength="6" placeholder="Min 6 characters">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Confirm New Password *</label>
+                  <input type="password" name="confirm_password" class="form-control" required minlength="6" placeholder="Repeat new password">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Update Password</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    if (permissions.enforcePageAccess(['TEACHER'])) {
+      components.renderLayout('My Profile');
+      loadTeacherProfile();
+    }
+
+    async function loadTeacherProfile() {
+      try {
+        const p = await api.get('/teacher/profile');
+        const setText = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = val || '—';
+        };
+
+        setText('prof-name', p.full_name);
+        setText('prof-subtitle', `${p.designation} • ${p.department_name}`);
+        setText('prof-empid', p.employee_id);
+        setText('prof-dept', p.department_name);
+        setText('prof-designation', p.designation);
+        setText('prof-qual', p.qualification);
+        setText('prof-joining', utils.formatDate(p.joining_date));
+        setText('prof-email', p.email);
+        setText('prof-phone', p.phone);
+        setText('prof-address', p.address);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function changePassword(e) {
+      e.preventDefault();
+      const form = document.getElementById('change-password-form');
+      const old_password = form.old_password.value;
+      const new_password = form.new_password.value;
+      const confirm_password = form.confirm_password.value;
+
+      if (new_password !== confirm_password) {
+        utils.showToast('New passwords do not match!', 'warning');
+        return;
+      }
+
+      try {
+        await api.post('/auth/change-password', { old_password, new_password });
+        utils.showToast('Password changed successfully!', 'success');
+        form.reset();
+      } catch (err) {
+        utils.showToast(err.message, 'danger');
+      }
+    }
+  </script>
+</body>
+</html>

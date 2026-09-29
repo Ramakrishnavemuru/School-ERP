@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timetable Management - School/College ERP</title>
+  <link rel="stylesheet" href="/frontend/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/frontend/css/themes.css">
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/forms.css">
+  <link rel="stylesheet" href="/frontend/css/tables.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Timetable Schedule</h2>
+            <div class="page-subtitle">Schedule classroom periods, faculty assignments, and weekly class timetables</div>
+          </div>
+          <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPeriodModal">
+              + Schedule Period
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="card card-custom p-3 mb-3">
+          <div class="row g-2">
+            <div class="col-md-5">
+              <select id="filter-class" class="form-select" onchange="loadTimetable()">
+                <option value="">All Classes</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <select id="filter-day" class="form-select" onchange="loadTimetable()">
+                <option value="">All Days</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-outline-secondary w-100" onclick="loadTimetable()">Refresh</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-custom-wrapper">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Time Slot</th>
+                <th>Subject</th>
+                <th>Class &amp; Section</th>
+                <th>Teacher</th>
+                <th>Room</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="timetable-tbody">
+              <tr><td colspan="7" class="text-center py-4 text-muted">Loading timetable...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Add Period Modal -->
+        <div class="modal fade" id="addPeriodModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <form id="add-period-form" onsubmit="createPeriod(event)">
+                <div class="modal-header">
+                  <h5 class="modal-title fw-bold">Schedule Class Period</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Class *</label>
+                      <select name="class_id" id="modal-tt-class" class="form-select" required onchange="handleClassChange()">
+                        <option value="">Select Class</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Section (Optional)</label>
+                      <select name="section_id" id="modal-tt-section" class="form-select">
+                        <option value="">All / None</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Subject *</label>
+                      <select name="subject_id" id="modal-tt-subject" class="form-select" required>
+                        <option value="">Select Subject</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Teacher *</label>
+                      <select name="teacher_id" id="modal-tt-teacher" class="form-select" required>
+                        <option value="">Select Teacher</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Day of Week *</label>
+                      <select name="day_of_week" class="form-select" required>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Start Time *</label>
+                      <input type="time" name="start_time" class="form-control" required value="09:00">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">End Time *</label>
+                      <input type="time" name="end_time" class="form-control" required value="10:00">
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Room Number</label>
+                      <input type="text" name="room_number" class="form-control" placeholder="e.g. Lab 2 or Room 101">
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Schedule Period</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/frontend/js/bootstrap.bundle.min.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/permissions.js"></script>
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/components.js"></script>
+  <script>
+    let allClasses = [];
+
+    if (permissions.enforcePageAccess(['ADMIN'])) {
+      components.renderLayout('Timetable Management');
+      initPage();
+    }
+
+    async function initPage() {
+      await loadDropdowns();
+      await loadTimetable();
+    }
+
+    async function loadDropdowns() {
+      try {
+        const [classes, teachersRes, subjects] = await Promise.all([
+          api.get('/classes'),
+          api.get('/teachers', { page_size: 100 }),
+          api.get('/subjects')
+        ]);
+        allClasses = classes;
+
+        const filterCls = document.getElementById('filter-class');
+        const modalCls = document.getElementById('modal-tt-class');
+        const modalSubj = document.getElementById('modal-tt-subject');
+        const modalTchr = document.getElementById('modal-tt-teacher');
+
+        if (filterCls) {
+          filterCls.innerHTML = '<option value="">All Classes</option>' +
+            classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+        if (modalCls) {
+          modalCls.innerHTML = '<option value="">Select Class</option>' +
+            classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+        if (modalSubj) {
+          modalSubj.innerHTML = '<option value="">Select Subject</option>' +
+            subjects.map(s => `<option value="${s.id}">${s.name} (${s.code}) - ${s.class_name || ''}</option>`).join('');
+        }
+        if (modalTchr && teachersRes.items) {
+          modalTchr.innerHTML = '<option value="">Select Teacher</option>' +
+            teachersRes.items.map(t => `<option value="${t.id}">${t.user ? t.user.full_name : ''} (${t.employee_id})</option>`).join('');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function handleClassChange() {
+      const classId = parseInt(document.getElementById('modal-tt-class').value);
+      const secSel = document.getElementById('modal-tt-section');
+      if (!secSel) return;
+
+      const cls = allClasses.find(c => c.id === classId);
+      if (cls && cls.sections) {
+        secSel.innerHTML = '<option value="">All / None</option>' +
+          cls.sections.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+      } else {
+        secSel.innerHTML = '<option value="">All / None</option>';
+      }
+    }
+
+    async function loadTimetable() {
+      const classId = document.getElementById('filter-class').value;
+      const day = document.getElementById('filter-day').value;
+      const tbody = document.getElementById('timetable-tbody');
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Loading timetable...</td></tr>';
+
+      try {
+        const params = {};
+        if (classId) params.class_id = classId;
+        if (day) params.day_of_week = day;
+
+        const entries = await api.get('/timetable', params);
+        if (!entries || entries.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="table-empty-state">No scheduled periods found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = entries.map(e => `
+          <tr>
+            <td><span class="badge bg-secondary">${e.day_of_week}</span></td>
+            <td><strong>${e.start_time} - ${e.end_time}</strong></td>
+            <td>${e.subject_name || '—'}</td>
+            <td>${e.class_name || '—'} ${e.section_name ? `(${e.section_name})` : ''}</td>
+            <td>${e.teacher_name || '—'}</td>
+            <td>${e.room_number || '—'}</td>
+            <td>
+              <button class="table-action-btn text-danger" onclick="deletePeriod(${e.id})" title="Delete">🗑️</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-danger py-4 text-center">${e.message}</td></tr>`;
+      }
+    }
+
+    async function createPeriod(e) {
+      e.preventDefault();
+      const form = document.getElementById('add-period-form');
+      const payload = {
+        class_id: parseInt(form.class_id.value),
+        section_id: parseInt(form.section_id.value) || null,
+        subject_id: parseInt(form.subject_id.value),
+        teacher_id: parseInt(form.teacher_id.value),
+        day_of_week: form.day_of_week.value,
+        start_time: form.start_time.value,
+        end_time: form.end_time.value,
+        room_number: form.room_number.value.trim() || null
+      };
+
+      try {
+        await api.post('/timetable', payload);
+        utils.showToast('Period scheduled successfully!', 'success');
+        form.reset();
+        bootstrap.Modal.getInstance(document.getElementById('addPeriodModal')).hide();
+        loadTimetable();
+      } catch (err) {
+        utils.showToast(err.message, 'danger');
+      }
+    }
+
+    async function deletePeriod(id) {
+      if (!confirm('Are you sure you want to remove this timetable period?')) return;
+      try {
+        await api.delete(`/timetable/${id}`);
+        utils.showToast('Period removed successfully', 'success');
+        loadTimetable();
+      } catch (e) {
+        utils.showToast(e.message, 'danger');
+      }
+    }
+  </script>
+</body>
+</html>
